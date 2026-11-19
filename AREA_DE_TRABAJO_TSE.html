@@ -1,0 +1,2389 @@
+<!DOCTYPE html>
+<html lang="es-419">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="artifact-type" content="tool">
+  <meta name="design-style" content="handbook">
+  <title>Simulador de Acta de Cierre JRV y Voto en el Extranjero</title>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+
+      /* 1. Handbook style tokens */
+      --background: #ffffff;
+      --surface-container-low: #f3f2f1;
+      --surface-container: #e8e7e5;
+      --surface-container-high: #dbdad9;
+
+      --on-surface: #0b0c0c;
+      --on-surface-variant: #505a5f;
+
+      --outline: #0b0c0c;
+      --outline-variant: #b1b4b6;
+
+      --primary: #162e51;
+      --on-primary: #ffffff;
+      --primary-container: #d2e2f1;
+      --on-primary-container: #0c2d4a;
+      --secondary: #4c2c92;
+      --tertiary: #1a569e;
+      --error: #d4351c;
+      --on-error: #ffffff;
+      --error-container: #fdecea;
+      --on-error-container: #8b1e0d;
+
+      --data-1: #1a569e;
+      --data-2: #c75a0a;
+      --data-3: #28a197;
+      --data-4: #4c2c92;
+      --data-context: #b1b4b6;
+
+      --font-headline: 'Public Sans', sans-serif;
+      --font-body: 'Public Sans', sans-serif;
+      --font-label: 'Public Sans', sans-serif;
+
+      --rounded: 0;
+      --rounded-lg: 0;
+      --rounded-full: 0;
+
+      --top-index-rule: 6px solid var(--primary);
+      --inset-rule: 5px solid var(--tertiary);
+      --inset-rule-positive: 5px solid var(--positive);
+      --inset-rule-warning: 5px solid var(--warning);
+      --inset-rule-error: 5px solid var(--error);
+      --button-ground: 0 2px 0 #091526;
+      --button-ground-secondary: 0 2px 0 #858686;
+      --focus-yellow: #ffdd00;
+      --focus-ring: 3px solid var(--focus-yellow);
+      --focus-bar: inset 0 0 0 2px var(--on-surface);
+      --focus-underline: 0 -2px var(--focus-yellow), 0 4px var(--on-surface);
+
+      /* Swatch tokens for Actas colors (Art. 209 CE) & Ballots */
+      --acta-rosado: #f4b8c8;
+      --acta-verde: #a8d8b9;
+      --acta-amarillo: #f6e27f;
+      --acta-gris: #d5d8dc;
+
+      /* 3. Shared tokens */
+      --positive: #00703c;
+      --positive-container: #d8f0e2;
+      --on-positive-container: #004223;
+      --warning: #9a4400;
+      --warning-container: #fce8d5;
+      --on-warning-container: #662d00;
+      --focus: var(--focus-yellow);
+
+      /* Type scale (Focused Tool) */
+      --display-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.35rem);
+      --headline-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+      --subhead-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+      --body-size: clamp(0.9375rem, 0.9rem + 0.15vw, 1rem);
+      --label-size: 0.75rem;
+
+      /* Spacing scale (4pt base) */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2.5rem;
+      --space-2xl: 4rem;
+
+      /* Motion */
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+      --dur-micro: 120ms;
+      --dur-short: 220ms;
+    }
+
+    /* Base reset */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      overflow-x: clip;
+      margin: 0;
+      padding: 0;
+      background: var(--background);
+      color: var(--on-surface);
+      font-family: var(--font-body);
+      font-size: var(--body-size);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    header { position: static !important; }
+
+    .page-grid {
+      display: grid;
+      gap: var(--space-lg);
+      padding: var(--space-lg);
+      max-width: 1200px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    .page-grid * { min-width: 0; }
+
+    /* Typography */
+    h1, h2, h3, h4 {
+      font-family: var(--font-headline);
+      color: var(--on-surface);
+      margin: 0 0 var(--space-sm) 0;
+      letter-spacing: -0.01em;
+      line-height: 1.12;
+      text-align: left;
+    }
+    h1 {
+      font-size: var(--display-size);
+      font-weight: 800;
+      margin-top: var(--space-md);
+    }
+    h2 {
+      font-size: var(--headline-size);
+      font-weight: 800;
+    }
+    h3 {
+      font-size: var(--subhead-size);
+      font-weight: 700;
+    }
+    p {
+      margin: 0 0 var(--space-md) 0;
+      max-width: 70ch;
+      text-align: left;
+    }
+    .caption, .hint {
+      font-size: 0.875rem;
+      color: var(--on-surface-variant);
+      margin: 0;
+    }
+    .tabular {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* 1. Heavy top index rule & square step badges */
+    .index-header {
+      border-top: var(--top-index-rule);
+      border-bottom: 1px solid var(--on-surface);
+      padding: var(--space-sm) 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-sm);
+      font-family: var(--font-label);
+      font-weight: 700;
+      font-size: var(--label-size);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--on-surface);
+    }
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 26px;
+      height: 26px;
+      padding: 0 var(--space-xs);
+      background: var(--primary);
+      color: var(--on-primary);
+      font-weight: 800;
+      font-size: 0.8125rem;
+      flex-shrink: 0;
+    }
+    .step-title-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+    .step-title-row h2,
+    .step-title-row h3 {
+      margin: 0;
+    }
+
+    /* 2. Inset blue rule */
+    .inset {
+      border-left: var(--inset-rule);
+      background: var(--surface-container-low);
+      padding: var(--space-md) var(--space-lg);
+    }
+    .inset--positive {
+      border-left: var(--inset-rule-positive);
+      background: var(--positive-container);
+      color: var(--on-positive-container);
+    }
+    .inset--warning {
+      border-left: var(--inset-rule-warning);
+      background: var(--warning-container);
+      color: var(--on-warning-container);
+    }
+    .inset--error {
+      border-left: var(--inset-rule-error);
+      background: var(--background);
+      border-top: 1px solid var(--outline-variant);
+      border-right: 1px solid var(--outline-variant);
+      border-bottom: 1px solid var(--outline-variant);
+    }
+
+    /* Status tags */
+    .status-tag {
+      display: inline-block;
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      font-family: var(--font-label);
+      font-weight: 700;
+      font-size: var(--label-size);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--rounded-full);
+    }
+    .status-tag--positive {
+      background: var(--positive-container);
+      color: var(--on-positive-container);
+    }
+    .status-tag--warning {
+      background: var(--warning-container);
+      color: var(--on-warning-container);
+    }
+    .status-tag--error {
+      background: var(--error-container);
+      color: var(--on-error-container);
+    }
+
+    /* 3. Grounded action buttons */
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-xs);
+      font-family: var(--font-label);
+      font-weight: 600;
+      font-size: 0.9375rem;
+      line-height: 1.2;
+      background: var(--primary);
+      color: var(--on-primary);
+      border: 0;
+      border-radius: var(--rounded);
+      padding: 0.625rem var(--space-md);
+      min-height: 44px;
+      cursor: pointer;
+      box-shadow: var(--button-ground);
+      text-decoration: none;
+      transition: background-color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
+    }
+    .button:hover:not(:disabled) {
+      background: var(--tertiary);
+    }
+    .button--secondary {
+      background: var(--surface-container-low);
+      color: var(--on-surface);
+      box-shadow: var(--button-ground-secondary);
+    }
+    .button--secondary:hover:not(:disabled) {
+      background: var(--surface-container-high);
+    }
+    .button--danger {
+      background: var(--error);
+      color: var(--on-error);
+      box-shadow: var(--button-ground);
+    }
+    .button:active:not(:disabled) {
+      transform: translateY(2px);
+      box-shadow: none;
+    }
+    .button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* 4. Yellow focus */
+    .button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    [tabindex]:focus-visible {
+      outline: var(--focus-ring);
+      outline-offset: 0;
+      box-shadow: var(--focus-bar);
+    }
+
+    /* Header & KPI Telemetry strip */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+      gap: var(--space-md);
+    }
+    .kpi-panel {
+      border-left: var(--inset-rule);
+      background: var(--surface-container-low);
+      padding: var(--space-sm) var(--space-md);
+    }
+    .kpi-label {
+      font-size: var(--label-size);
+      font-weight: 700;
+      color: var(--on-surface-variant);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: var(--space-xs);
+    }
+    .kpi-value {
+      font-size: var(--headline-size);
+      font-weight: 800;
+      line-height: 1.1;
+      color: var(--on-surface);
+      font-variant-numeric: tabular-nums;
+      margin-bottom: var(--space-xs);
+    }
+    .kpi-value--positive { color: var(--positive); }
+    .kpi-value--error { color: var(--error); }
+
+    /* Navigation Bar (Modules) */
+    .module-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      border-bottom: 2px solid var(--on-surface);
+      padding-bottom: var(--space-md);
+      align-items: center;
+      justify-content: space-between;
+    }
+    .module-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+    }
+    .utility-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+    }
+
+    /* Module Panels */
+    .module-panel {
+      display: none;
+      gap: var(--space-lg);
+    }
+    .module-panel.is-active {
+      display: grid;
+    }
+
+    /* Two-column Asymmetric Tool Workbench */
+    .workbench-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      gap: var(--space-xl);
+      align-items: start;
+    }
+    @media (max-width: 880px) {
+      .workbench-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Form Controls */
+    .form-section {
+      border-top: 2px solid var(--on-surface);
+      padding-top: var(--space-md);
+      margin-bottom: var(--space-lg);
+    }
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+      gap: var(--space-md);
+      align-items: end;
+    }
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .field-group--error {
+      border-left: var(--inset-rule-error);
+      padding-left: var(--space-sm);
+    }
+    label {
+      font-weight: 700;
+      font-size: 0.9375rem;
+      color: var(--on-surface);
+    }
+    .field-hint {
+      font-size: 0.8125rem;
+      color: var(--on-surface-variant);
+      margin: 0;
+    }
+    .field-error-text {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--error);
+      margin: 0;
+    }
+    input[type="number"],
+    input[type="text"],
+    select,
+    textarea {
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--on-surface);
+      background: var(--background);
+      border: 2px solid var(--outline);
+      border-radius: var(--rounded);
+      padding: 0.5rem 0.75rem;
+      min-height: 44px;
+      width: 100%;
+    }
+    select {
+      padding-right: var(--space-xl);
+    }
+    input[type="number"] {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Checkbox rows */
+    .check-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      padding: var(--space-sm);
+      background: var(--surface-container-low);
+      border-left: 3px solid var(--outline-variant);
+      cursor: pointer;
+    }
+    .check-item.is-done {
+      border-left-color: var(--positive);
+    }
+    .check-item input[type="checkbox"] {
+      width: 22px;
+      height: 22px;
+      min-height: 22px;
+      margin: 2px 0 0 0;
+      accent-color: var(--primary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .check-item label {
+      font-weight: 400;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+
+    /* Preset row */
+    .preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-md);
+    }
+
+    /* Summary lists & Tables */
+    .summary-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: var(--space-md);
+      padding: var(--space-sm) 0;
+      border-bottom: 1px solid var(--outline-variant);
+    }
+    .summary-row--total {
+      border-top: 2px solid var(--on-surface);
+      border-bottom: 2px solid var(--on-surface);
+      font-weight: 800;
+      padding: var(--space-sm) 0;
+    }
+    .summary-key {
+      font-weight: 700;
+      color: var(--on-surface);
+    }
+    .summary-val {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: var(--space-md);
+    }
+    table.data-table th {
+      text-align: left;
+      font-weight: 700;
+      font-size: 0.875rem;
+      padding: var(--space-sm) var(--space-xs);
+      border-bottom: 2px solid var(--on-surface);
+    }
+    table.data-table th.num,
+    table.data-table td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    table.data-table td {
+      padding: var(--space-sm) var(--space-xs);
+      border-bottom: 1px solid var(--outline-variant);
+      vertical-align: top;
+    }
+
+    .color-swatch {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 1px solid var(--on-surface);
+      vertical-align: middle;
+      margin-right: var(--space-xs);
+    }
+    .swatch--rosado { background: var(--acta-rosado); }
+    .swatch--verde { background: var(--acta-verde); }
+    .swatch--amarillo { background: var(--acta-amarillo); }
+    .swatch--gris { background: var(--acta-gris); }
+
+    /* Chart Container */
+    .chart-box {
+      border-top: 2px solid var(--on-surface);
+      padding-top: var(--space-md);
+      min-height: 220px;
+    }
+
+    /* Case Studies & Quiz Cards */
+    .card-wrapper {
+      container-type: inline-size;
+    }
+    .case-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+      gap: var(--space-sm);
+      margin-bottom: var(--space-md);
+    }
+    .case-card-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-xs);
+      text-align: left;
+      background: var(--surface-container-low);
+      color: var(--on-surface);
+      border: 0;
+      border-left: 5px solid var(--outline-variant);
+      padding: var(--space-md);
+      min-height: 44px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .case-card-btn:hover {
+      background: var(--surface-container-high);
+    }
+    .case-card-btn.is-current {
+      border-left-color: var(--primary);
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+    .case-card-btn.is-solved {
+      border-left-color: var(--positive);
+    }
+    .case-card-btn:focus-visible {
+      outline: var(--focus-ring);
+      outline-offset: 0;
+      box-shadow: var(--focus-bar);
+    }
+
+    .option-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+      margin: var(--space-md) 0;
+    }
+    .option-btn {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      text-align: left;
+      background: var(--background);
+      color: var(--on-surface);
+      border: 2px solid var(--outline);
+      padding: var(--space-md);
+      min-height: 44px;
+      font-family: inherit;
+      font-size: var(--body-size);
+      cursor: pointer;
+    }
+    .option-btn:hover:not(:disabled) {
+      background: var(--surface-container-low);
+    }
+    .option-btn.is-selected {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+    .option-btn.is-correct {
+      background: var(--positive-container);
+      color: var(--on-positive-container);
+      border-color: var(--positive);
+    }
+    .option-btn.is-wrong {
+      background: var(--error-container);
+      color: var(--on-error-container);
+      border-color: var(--error);
+    }
+    .option-btn:focus-visible {
+      outline: var(--focus-ring);
+      outline-offset: 0;
+      box-shadow: var(--focus-bar);
+    }
+    .option-letter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background: var(--surface-container-high);
+      color: var(--on-surface);
+      font-weight: 800;
+      font-size: 0.8125rem;
+      flex-shrink: 0;
+    }
+
+    /* Ballot Schematic (Voto Extranjero & Clasificación) */
+    .ballot-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+      gap: var(--space-lg);
+    }
+    .ballot-card {
+      border: 2px solid var(--outline);
+      background: var(--background);
+      padding: var(--space-md);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+    .ballot-svg-wrap {
+      border: 1px solid var(--outline-variant);
+      background: var(--surface-container-low);
+      padding: var(--space-sm);
+      min-height: 150px;
+    }
+    .phase-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+    @media (max-width: 720px) {
+      .phase-strip {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    @media (max-width: 640px) {
+      .page-grid {
+        grid-template-columns: 1fr;
+        padding: var(--space-md);
+      }
+      .phase-strip {
+        grid-template-columns: 1fr;
+      }
+    }
+    .phase-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-xs);
+      text-align: left;
+      background: var(--surface-container-low);
+      color: var(--on-surface);
+      border: 0;
+      border-top: 4px solid var(--outline-variant);
+      padding: var(--space-md);
+      min-height: 44px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .phase-btn.is-active {
+      border-top-color: var(--primary);
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+    .phase-btn:focus-visible {
+      outline: var(--focus-ring);
+      outline-offset: 0;
+      box-shadow: var(--focus-bar);
+    }
+
+    .footer-note {
+      border-top: 1px solid var(--outline-variant);
+      padding-top: var(--space-md);
+      margin-top: var(--space-xl);
+      font-size: 0.875rem;
+      color: var(--on-surface-variant);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-grid">
+    <!-- Top Index Header & Title -->
+    <header>
+      <div class="index-header">
+        <span>Simulador Práctico Electoral · El Salvador</span>
+        <span>JRV · SEP · Voto en el Extranjero</span>
+      </div>
+      <h1>Llenado del Acta de Cierre, Escrutinio Preliminar y Voto en el Extranjero</h1>
+      <p>Herramienta interactiva de entrenamiento para validar la cuadratura de papeletas en el Sistema de Escrutinio Preliminar (SEP), resolver incidentes en mesa conforme al Código Electoral y practicar los plazos, fases y clasificación del sufragio en el exterior.</p>
+
+      <!-- Live Telemetry Bar -->
+      <div class="kpi-grid" aria-label="Resumen de progreso del simulador">
+        <div class="kpi-panel">
+          <div class="kpi-label">Cuadratura del Acta</div>
+          <div class="kpi-value" id="kpi-cuadratura">Pendiente</div>
+          <p class="caption" id="kpi-cuadratura-sub">700 papeletas base · Padrón vs. Urna</p>
+        </div>
+        <div class="kpi-panel">
+          <div class="kpi-label">Casos Prácticos (Día D)</div>
+          <div class="kpi-value" id="kpi-casos">0 / 6</div>
+          <p class="caption" id="kpi-casos-sub">Incidentes de mesa resueltos</p>
+        </div>
+        <div class="kpi-panel">
+          <div class="kpi-label">Clasificación Extranjero</div>
+          <div class="kpi-value" id="kpi-boletas">0 / 6</div>
+          <p class="caption">Papeletas evaluadas (Art. 205–207 CE)</p>
+        </div>
+        <div class="kpi-panel">
+          <div class="kpi-label">Evaluación Teórico-Legal</div>
+          <div class="kpi-value" id="kpi-quiz">0 / 10</div>
+          <p class="caption" id="kpi-quiz-sub">Aciertos verificados</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation & Utility Actions -->
+    <nav class="module-nav" aria-label="Módulos del simulador">
+      <div class="module-tabs" role="tablist">
+        <button type="button" class="button" id="tab-acta" role="tab" aria-selected="true" onclick="switchModule('acta')">1. Acta de Cierre y SEP</button>
+        <button type="button" class="button button--secondary" id="tab-casos" role="tab" aria-selected="false" onclick="switchModule('casos')">2. Casos Prácticos de Mesa</button>
+        <button type="button" class="button button--secondary" id="tab-exterior" role="tab" aria-selected="false" onclick="switchModule('exterior')">3. Voto en el Extranjero</button>
+        <button type="button" class="button button--secondary" id="tab-quiz" role="tab" aria-selected="false" onclick="switchModule('quiz')">4. Cuestionario de Plazos y Ley</button>
+      </div>
+      <div class="utility-actions">
+        <button type="button" class="button button--secondary" onclick="exportSummaryCsv()">Exportar reporte CSV</button>
+        <button type="button" class="button button--secondary" id="btn-reset-all" onclick="handleResetAll(this)">Reiniciar progreso</button>
+      </div>
+    </nav>
+
+    <!-- ===================================================================== -->
+    <!-- MÓDULO 1: SIMULADOR DEL ACTA DE CIERRE Y SEP                          -->
+    <!-- ===================================================================== -->
+    <section id="panel-acta" class="module-panel is-active" aria-labelledby="tab-acta">
+      <div>
+        <div class="step-title-row">
+          <span class="step-badge">1</span>
+          <h2>Simulador de Cuadratura y Llenado del Acta de Cierre (SEP)</h2>
+        </div>
+        <p>Carga un escenario o ajusta las cifras reales tras el cierre de las 5:00 p.m. El sistema valida el orden obligatorio de escrutinio (Art. 201 y 232 CE), la ecuación de las 700 papeletas y la coincidencia con el padrón de firmas.</p>
+
+        <div class="preset-row" aria-label="Escenarios precargados">
+          <button type="button" class="button button--secondary" onclick="loadActaPreset('limpio')">Escenario A: Cuadre Presidencial limpio</button>
+          <button type="button" class="button button--secondary" onclick="loadActaPreset('discrepancia')">Escenario B: Discrepancia de borrador (Caso 4)</button>
+          <button type="button" class="button button--secondary" onclick="loadActaPreset('asamblea')">Escenario C: Asamblea Legislativa y voto cruzado</button>
+        </div>
+      </div>
+
+      <div class="workbench-grid">
+        <!-- INPUTS DEL ACTA -->
+        <div>
+          <div class="form-section">
+            <h3>Orden de Escrutinio y Control del Paquete</h3>
+            <div class="field-grid">
+              <div class="field-group">
+                <label for="acta-eleccion">Elección a escrutar (Art. 201 CE)</label>
+                <select id="acta-eleccion" onchange="onActaInputChange()">
+                  <option value="presidencial">1.º Presidente y Vicepresidente (Depósito Gris)</option>
+                  <option value="asamblea">2.º Diputados Asamblea Legislativa (Depósito Amarillo)</option>
+                  <option value="municipal">3.º Concejos Municipales (Depósito Rosado)</option>
+                </select>
+                <p class="field-hint">Alterar el orden legal acarrea multa (Art. 201 y 232 CE).</p>
+              </div>
+              <div class="field-group">
+                <label for="acta-orden-confirmado">¿Se completó la elección previa?</label>
+                <select id="acta-orden-confirmado" onchange="onActaInputChange()">
+                  <option value="si">Sí, siguiendo la secuencia oficial</option>
+                  <option value="no">No, se intenta saltar el orden</option>
+                </select>
+                <p class="field-hint">Verifica antes de habilitar el SEP.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3>Control de Papeletas y Padrón de Firmas</h3>
+            <div class="field-grid">
+              <div class="field-group">
+                <label for="acta-recibidas">Papeletas recibidas (Art. 186 CE)</label>
+                <input type="number" id="acta-recibidas" min="1" max="700" value="700" oninput="onActaInputChange()">
+                <p class="field-hint">Máximo estándar por JRV: 700.</p>
+              </div>
+              <div class="field-group">
+                <label for="acta-firmas">Firmas y huellas en Padrón</label>
+                <input type="number" id="acta-firmas" min="0" max="700" value="482" oninput="onActaInputChange()">
+                <p class="field-hint">Dato B del cuadre previo al conteo.</p>
+              </div>
+              <div class="field-group">
+                <label for="acta-sobrantes">Sobrantes rasgadas (V1 y V2)</label>
+                <input type="number" id="acta-sobrantes" min="0" max="700" value="218" oninput="onActaInputChange()">
+                <p class="field-hint">Art. 200 lit. a CE: contar y rasgar.</p>
+              </div>
+              <div class="field-group">
+                <label for="acta-inutilizadas">Papeletas inutilizadas</label>
+                <input type="number" id="acta-inutilizadas" min="0" max="700" value="0" oninput="onActaInputChange()">
+                <p class="field-hint">Dañadas antes de depositarse.</p>
+              </div>
+              <div class="field-group">
+                <label for="acta-faltantes">Papeletas faltantes</label>
+                <input type="number" id="acta-faltantes" min="0" max="700" value="0" oninput="onActaInputChange()">
+                <p class="field-hint">Diferencia no hallada en paquete.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3>Clasificación de Votos en Urna (Art. 200, 205–207 CE)</h3>
+            <div class="field-grid">
+              <div class="field-group">
+                <label for="acta-validos-bandera">Votos válidos enteros (Bandera)</label>
+                <input type="number" id="acta-validos-bandera" min="0" max="700" value="456" oninput="onActaInputChange()">
+                <p class="field-hint">Marca única sobre bandera o candidato.</p>
+              </div>
+              <div class="field-group" id="wrap-preferencia">
+                <label for="acta-validos-pref">Enteros con preferencia (Asamblea)</label>
+                <input type="number" id="acta-validos-pref" min="0" max="700" value="0" oninput="onActaInputChange()">
+                <p class="field-hint">Rostro(s) de un mismo partido.</p>
+              </div>
+              <div class="field-group" id="wrap-cruzados">
+                <label for="acta-validos-cruzado">Papeletas con voto cruzado</label>
+                <input type="number" id="acta-validos-cruzado" min="0" max="700" value="0" oninput="onActaInputChange()">
+                <p class="field-hint">Marcas en distintos partidos (≤ escaños).</p>
+              </div>
+              <div class="field-group">
+                <label for="acta-nulos">Votos nulos (Art. 207 CE)</label>
+                <input type="number" id="acta-nulos" min="0" max="700" value="14" oninput="onActaInputChange()">
+                <p class="field-hint">2+ banderas, exceso de marcas o tachadura.</p>
+              </div>
+              <div class="field-group">
+                <label for="acta-impugnados">Votos impugnados (Art. 206 CE)</label>
+                <input type="number" id="acta-impugnados" min="0" max="700" value="4" oninput="onActaInputChange()">
+                <p class="field-hint">Intención dudosa reclamada en mesa.</p>
+              </div>
+              <div class="field-group">
+                <label for="acta-abstenciones">Abstenciones (en blanco)</label>
+                <input type="number" id="acta-abstenciones" min="0" max="700" value="8" oninput="onActaInputChange()">
+                <p class="field-hint">Papeletas sin ninguna marca.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3>Observaciones del Acta (Paso 3 SEP)</h3>
+            <div class="preset-row">
+              <button type="button" class="button button--secondary" onclick="appendObservacion('reconteo')">+ Constancia de reconteo</button>
+              <button type="button" class="button button--secondary" onclick="appendObservacion('art186')">+ Validación Art. 186 CE</button>
+              <button type="button" class="button button--secondary" onclick="appendObservacion('negativa')">+ Negativa de firma</button>
+            </div>
+            <div class="field-group">
+              <label for="acta-observaciones">Texto de observaciones para el acta impresa</label>
+              <textarea id="acta-observaciones" rows="3" oninput="onActaInputChange()"></textarea>
+              <p class="field-hint">Si no existen anomalías, deja el campo vacío para marcar «Sin observaciones» en el SEP.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- SALIDAS EN VIVO: CUADRATURA, GRÁFICO Y CHECKLIST -->
+        <div>
+          <div id="acta-veredicto" class="inset inset--positive" role="status" aria-live="polite">
+            <span class="status-tag status-tag--positive" id="acta-badge">Acta cuadrada</span>
+            <h3 id="acta-veredicto-titulo" style="margin-top: var(--space-sm);">Cifras consistentes para impresión y escaneo</h3>
+            <p id="acta-veredicto-desc" style="margin-bottom: 0;">El total en urna coincide con las firmas del padrón y completa las 700 papeletas recibidas.</p>
+          </div>
+
+          <div class="form-section" style="margin-top: var(--space-lg);">
+            <h3>Desglose de Cuadratura Matemática</h3>
+            <ul class="summary-list">
+              <li class="summary-row">
+                <span class="summary-key">Total votos válidos (enteros + cruzados)</span>
+                <span class="summary-val" id="out-total-validos">456</span>
+              </li>
+              <li class="summary-row">
+                <span class="summary-key">Total papeletas en urna (válidos + especiales)</span>
+                <span class="summary-val" id="out-en-urna">482</span>
+              </li>
+              <li class="summary-row">
+                <span class="summary-key">Diferencia Urna vs. Padrón de firmas</span>
+                <span class="summary-val" id="out-diff-padron">0</span>
+              </li>
+              <li class="summary-row">
+                <span class="summary-key">Sobrantes + Inutilizadas + Faltantes</span>
+                <span class="summary-val" id="out-no-votadas">218</span>
+              </li>
+              <li class="summary-row summary-row--total">
+                <span class="summary-key">Balance total vs. Recibidas (700)</span>
+                <span class="summary-val" id="out-balance-total">700 / 700 (0 dif.)</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="chart-box">
+            <h3>Distribución de las Papeletas en Mesa</h3>
+            <div id="acta-chart" aria-label="Gráfico horizontal de clasificación de papeletas"></div>
+          </div>
+
+          <div class="form-section">
+            <h3>Secuencia Operativa SEP (Paso a Paso)</h3>
+            <div class="check-list" id="sep-checklist"></div>
+          </div>
+
+          <div class="form-section">
+            <h3>Distribución Oficial de Copias por Color (Art. 209 CE)</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Color de franja</th>
+                  <th>Entidad destinataria</th>
+                  <th class="num">Copias</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="color-swatch swatch--rosado" aria-hidden="true"></span>Rosado</td>
+                  <td>Junta Electoral Departamental (JED)</td>
+                  <td class="num">1</td>
+                </tr>
+                <tr>
+                  <td><span class="color-swatch swatch--verde" aria-hidden="true"></span>Verde</td>
+                  <td>Fiscalía General de la República (FGR)</td>
+                  <td class="num">1</td>
+                </tr>
+                <tr>
+                  <td><span class="color-swatch swatch--amarillo" aria-hidden="true"></span>Amarillo</td>
+                  <td>Junta Electoral Municipal (JEM)</td>
+                  <td class="num">1</td>
+                </tr>
+                <tr>
+                  <td><span class="color-swatch swatch--gris" aria-hidden="true"></span>Gris</td>
+                  <td>Partidos / Coaliciones contendientes y JVE (si no se retiran, van a la JEM)</td>
+                  <td class="num">1 c/u + JVE</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="caption">El Acta Original firmada y sellada se escanea en el kit tecnológico y se entrega al recolector del TSE contra firma del «Recibo de acta de cierre y escrutinio» (original para el recolector, copia para presidencia JRV).</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- MÓDULO 2: CASOS PRÁCTICOS DEL DÍA DE LA ELECCIÓN                      -->
+    <!-- ===================================================================== -->
+    <section id="panel-casos" class="module-panel" aria-labelledby="tab-casos">
+      <div>
+        <div class="step-title-row">
+          <span class="step-badge">2</span>
+          <h2>Casos Prácticos de la JRV en el Día de la Elección</h2>
+        </div>
+        <p>Selecciona cada incidente documentado en la capacitación electoral, elige la actuación conforme al Código Electoral y verifica la responsabilidad específica de cada integrante de la JRV y de la vigilancia.</p>
+      </div>
+
+      <div class="case-selector-grid" id="casos-selector" aria-label="Selector de casos prácticos"></div>
+
+      <div class="workbench-grid">
+        <div class="inset" id="caso-detalle-box">
+          <span class="status-tag" id="caso-tag">Caso práctico</span>
+          <h3 id="caso-titulo" style="margin-top: var(--space-sm);">Cargando caso…</h3>
+          <p id="caso-relato"></p>
+          <p class="caption" id="caso-pregunta-label"><strong>¿Cuál es la actuación legalmente procedente de la JRV?</strong></p>
+
+          <div class="option-list" id="caso-opciones"></div>
+        </div>
+
+        <div>
+          <div id="caso-feedback" class="inset" role="status" aria-live="polite">
+            <h3>Análisis normativo y roles en mesa</h3>
+            <p class="caption">Selecciona una opción de la izquierda para evaluar la legalidad de la decisión y revisar la función de cada actor.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- MÓDULO 3: VOTO EN EL EXTRANJERO (PLAZOS, FASES Y CLASIFICACIÓN)       -->
+    <!-- ===================================================================== -->
+    <section id="panel-exterior" class="module-panel" aria-labelledby="tab-exterior">
+      <div>
+        <div class="step-title-row">
+          <span class="step-badge">3</span>
+          <h2>Procedimiento, Plazos y Clasificación del Voto en el Extranjero</h2>
+        </div>
+        <p>Explora el recorrido técnico del sufragio en el exterior bajo la Ley Especial para el Sufragio en el Extranjero y el Decreto Legislativo 541, y clasifica papeletas simuladas según los criterios de validez, nulidad, impugnación y abstención.</p>
+      </div>
+
+      <!-- Datos clave del voto exterior -->
+      <div class="kpi-grid">
+        <div class="kpi-panel">
+          <div class="kpi-label">Circunscripción Especial</div>
+          <div class="kpi-value">15.ª</div>
+          <p class="caption">Regulada en Art. 10 y Ley Especial</p>
+        </div>
+        <div class="kpi-panel">
+          <div class="kpi-label">Diputados Asignados</div>
+          <div class="kpi-value">6 de 60</div>
+          <p class="caption">54 nacionales + 6 electos en el exterior</p>
+        </div>
+        <div class="kpi-panel">
+          <div class="kpi-label">Red Internacional</div>
+          <div class="kpi-value">92 en 29</div>
+          <p class="caption">92 centros de votación en 29 países</p>
+        </div>
+        <div class="kpi-panel">
+          <div class="kpi-label">Plazo de Votación</div>
+          <div class="kpi-value">1 mes</div>
+          <p class="caption">Cierre escalonado y JEM exterior (DL 541)</p>
+        </div>
+      </div>
+
+      <!-- Simulador de las 4 Fases del Procedimiento Técnico -->
+      <div class="form-section">
+        <h3>Recorrido Técnico del Voto en el Extranjero (4 Fases)</h3>
+        <div class="phase-strip" id="exterior-phases" role="tablist" aria-label="Fases técnicas del voto en el extranjero"></div>
+        <div class="inset" id="exterior-phase-detail" style="margin-top: var(--space-md);"></div>
+      </div>
+
+      <!-- Simulador de Clasificación de Papeletas -->
+      <div class="form-section">
+        <h3>Práctica de Clasificación de Votos (Válidos, Nulos, Impugnados y Abstenciones)</h3>
+        <p>Observa las marcas en cada papeleta simulada y selecciona su clasificación correcta conforme a los Art. 197, 205, 206 y 207 del Código Electoral (aplicables tanto en el voto en el extranjero como en mesa nacional).</p>
+        <div class="ballot-grid" id="ballot-simulator-grid"></div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- MÓDULO 4: CUESTIONARIO DE EVALUACIÓN DE PLAZOS Y NORMATIVA            -->
+    <!-- ===================================================================== -->
+    <section id="panel-quiz" class="module-panel" aria-labelledby="tab-quiz">
+      <div>
+        <div class="step-title-row">
+          <span class="step-badge">4</span>
+          <h2>Cuestionario de Evaluación: JRV, Plazos y Voto en el Extranjero</h2>
+        </div>
+        <p>Pon a prueba tus conocimientos sobre plazos legales de nombramiento y justificación, llenado de las 7 actas, límites de vigilancia y procedimiento del voto en el exterior.</p>
+
+        <div class="preset-row" aria-label="Filtrar preguntas por tema">
+          <button type="button" class="button button--secondary" id="filter-todos" onclick="setQuizFilter('todos')">Todas (10)</button>
+          <button type="button" class="button button--secondary" id="filter-acta" onclick="setQuizFilter('acta')">Acta y Escrutinio JRV (4)</button>
+          <button type="button" class="button button--secondary" id="filter-plazos" onclick="setQuizFilter('plazos')">Plazos y Organismos (3)</button>
+          <button type="button" class="button button--secondary" id="filter-exterior" onclick="setQuizFilter('exterior')">Voto en el Extranjero (3)</button>
+        </div>
+      </div>
+
+      <div id="quiz-container" style="display: grid; gap: var(--space-lg);"></div>
+    </section>
+
+    <footer class="footer-note">
+      <p style="margin-bottom: 0;">Fuente normativa y operativa: Código Electoral de El Salvador (Arts. 32, 38, 63, 64, 95, 98–113, 121–131, 186–215, 232, 242 y 278), Instructivo de Junta Receptora de Votos 2027 (Dirección de Capacitación y Educación Cívica), Ley Especial para el Sufragio en el Extranjero (Decreto Legislativo 541) y Guía de Aprendizaje sobre Escrutinio Preliminar.</p>
+    </footer>
+  </main>
+
+  <api-shim></api-shim>
+  <script>
+    // =========================================================================
+    // DATA DEFINITIONS (All strings in backtick literals, no trailing commas)
+    // =========================================================================
+
+    const SEP_CHECKLIST_ITEMS = [
+      {
+        id: `sep_1`,
+        label: `1. A las 5:00 p.m., el Presidente anuncia el cierre y el Tercer Vocal se ubica al final de la fila (Art. 198 CE).`
+      },
+      {
+        id: `sep_2`,
+        label: `2. Se instala el kit de transmisión en 8 etapas y el Secretario proyecta la «Puesta a cero total» del SEP.`
+      },
+      {
+        id: `sep_3`,
+        label: `3. Registro de JRV y vigilantes en el SEP (mínimo 3 propietarios para habilitar «Siguiente») y conteo de firmas/huellas.`
+      },
+      {
+        id: `sep_4`,
+        label: `4. Primer Vocal cuenta papeletas sobrantes e inutilizadas; Segundo Vocal las rasga hasta la mitad y embolsa (Art. 200 lit. a CE).`
+      },
+      {
+        id: `sep_5`,
+        label: `5. Revisión previa de depósitos municipal (rosado) y legislativo (amarillo) para devolver sin desdoblar papeletas grises mal depositadas.`
+      },
+      {
+        id: `sep_6`,
+        label: `6. Apertura de urna en orden legal (Presidencial → Asamblea → Concejos), lectura a viva voz y formación de bloques en mesa.`
+      },
+      {
+        id: `sep_7`,
+        label: `7. Digitación en SEP bajo proyección pública, validación de cuadratura e ingreso de observaciones o incidencias.`
+      },
+      {
+        id: `sep_8`,
+        label: `8. Impresión del Acta Original en papel especial, firmas de JRV y vigilantes, sello JRV, escaneo y entrega de copias por color (Art. 209 CE).`
+      }
+    ];
+
+    const PRACTICAL_CASES = [
+      {
+        id: `caso_discrepancia`,
+        code: `Caso 1 (Caso 4 de Mesa)`,
+        title: `Inconsistencia entre registros auxiliares y borrador del Acta SEP`,
+        narrative: `Al finalizar el conteo de la elección presidencial, el borrador del SEP muestra 485 papeletas registradas, pero el registro auxiliar y el padrón de firmas indican 482 votantes. El Presidente propone imponer los 485 datos del borrador para terminar rápido; el Primer Vocal sugiere avalar las cifras inconsistentes; un vigilante afirma que volver a contar compromete la transparencia; el Secretario se niega a digitar datos inconsistentes y exige verificación física.`,
+        options: [
+          {
+            id: `a`,
+            text: `Aceptar la propuesta del Presidente y del Primer Vocal para cerrar el acta rápido, dejando constancia verbal.`
+          },
+          {
+            id: `b`,
+            text: `Detener la emisión del acta, respaldar la postura del Secretario realizando un reconteo físico de los bloques a la vista de todos, corregir si procede y asentar lo sucedido en Observaciones.`
+          },
+          {
+            id: `c`,
+            text: `Dar la razón al vigilante que prohíbe el reconteo y enviar el acta descuadrada al COT sin verificar las papeletas.`
+          },
+          {
+            id: `d`,
+            text: `Solicitar una nueva hoja especial de acta al delegado JEM para reimprimir y desechar el formulario anterior.`
+          }
+        ],
+        correct: `b`,
+        analysis: `Es legal realizar un reconteo físico en mesa cuando se detecta una discrepancia entre el registro auxiliar y el borrador antes de cerrar el acta; lo ilegal sería alterar o imponer cifras sin verificación previa. El Secretario actuó conforme a la ley al negarse a digitar datos inconsistentes, mientras que el Presidente, el Primer Vocal y el vigilante que se opuso al reconteo sostuvieron posturas improcedentes. Además, si persiste alguna diferencia tras la verificación, debe consignarse íntegramente en el apartado de Observaciones del Acta (Art. 200 lit. d CE).`
+      },
+      {
+        id: `caso_dui_alterado`,
+        code: `Caso 2 (JRV 1003)`,
+        title: `DUI alterado u ostensiblemente falso al solicitar papeletas`,
+        narrative: `Un ciudadano se presenta ante la JRV 1003 y entrega su DUI al Presidente. Al realizar la inspección física obligatoria, el Presidente detecta fotografía superpuesta, plástico despegado, alteración en los dígitos del número de DUI y texturas ajenas al documento oficial emitido por el RNPN.`,
+        options: [
+          {
+            id: `a`,
+            text: `Entregar las papeletas si su nombre aparece en el padrón de búsqueda para no vulnerar su derecho al voto.`
+          },
+          {
+            id: `b`,
+            text: `Permitirle votar únicamente para Presidente y Diputados si el Primer Vocal da fe de conocerlo.`
+          },
+          {
+            id: `c`,
+            text: `Confrontar de forma respetuosa pero firme al ciudadano, denegar la entrega de papeletas, decomisar/consignar el documento según el caso e informar a la JEM y al Fiscal Electoral (FGR).`
+          },
+          {
+            id: `d`,
+            text: `Pedirle que regrese con su pasaporte o licencia de conducir para habilitarle el sufragio en la JRV.`
+          }
+        ],
+        correct: `c`,
+        analysis: `Conforme a los Art. 32 y 196 inciso 4.º literales b) y c) del Código Electoral, no puede votar quien presente un DUI destruido parcialmente en datos esenciales, alterado u ostensiblemente falso. La JRV debe denegar el voto, tomar debida nota en el registro de «Ciudadanos que no pudieron votar» y, ante falsedad ostensible, decomisar el documento e informar de inmediato a la Junta Electoral Municipal (JEM) y a la Fiscalía General de la República (Fiscal Electoral destacado).`
+      },
+      {
+        id: `caso_impugnado_cruzado`,
+        code: `Caso 3 (Clasificación)`,
+        title: `Voto impugnado sin acuerdo en mesa y exceso de marcas en voto cruzado`,
+        narrative: `Durante el escrutinio de Diputados a la Asamblea Legislativa aparecen dos papeletas conflictivas: la Papeleta X tiene una marca borrosa fuera de los recuadros que genera duda sobre la intención del elector y los miembros de la JRV no logran acuerdo tras deliberar; la Papeleta Y presenta marcas cruzadas en 7 candidatos de distintos partidos en una circunscripción de 5 escaños.`,
+        options: [
+          {
+            id: `a`,
+            text: `Clasificar la Papeleta X como voto válido por mayoría simple de los vigilantes y la Papeleta Y como voto cruzado tomando solo las primeras 5 marcas.`
+          },
+          {
+            id: `b`,
+            text: `En la Papeleta X, la JRV es la máxima autoridad en mesa: si no hay acuerdo sobre la intención del votante, se clasifica como nulo (o queda como impugnado documentado para resolución del TSE en escrutinio final, Art. 206 y 215 CE); la Papeleta Y es voto nulo automático por exceder los escaños de la circunscripción (Art. 207 lit. d CE).`
+          },
+          {
+            id: `c`,
+            text: `Declarar ambas papeletas como abstenciones para no afectar la cuadratura del padrón de firmas.`
+          },
+          {
+            id: `d`,
+            text: `Llamar al Fiscal Electoral para que reasigne a los miembros de la JRV y decida la validez de ambas papeletas.`
+          }
+        ],
+        correct: `b`,
+        analysis: `La JRV es la única autoridad deliberante en la mesa; ni vigilantes ni observadores votan en sus decisiones, y el Fiscal Electoral no puede intervenir en deliberaciones ni reasignar roles (Art. 129 y 225 CE). Conforme al instructivo y notas de capacitación, si hay un voto impugnado donde no existe acuerdo en mesa sobre la intención del sufragio, se toma como nulo (o se registra en el bloque impugnado cuando se sostiene la reclamación formal para que el TSE resuelva en escrutinio final, Art. 215 CE). Por su parte, el Art. 207 lit. d) del Código Electoral ordena anular toda papeleta de voto cruzado cuyo número de marcas sobrepase el total de escaños de la circunscripción.`
+      },
+      {
+        id: `caso_omision_sello`,
+        code: `Caso 4 (Art. 186 CE)`,
+        title: `Papeleta marcada dentro de la urna sin firma o sello del Secretario`,
+        narrative: `Al extraer una a una las papeletas de la urna de la elección legislativa, el Presidente detecta una papeleta marcada claramente por una bandera de partido, pero advierte que el Secretario omitió estampar su firma y el sello de la JRV en el reverso antes de entregarla al votante.`,
+        options: [
+          {
+            id: `a`,
+            text: `Anularla de inmediato porque toda omisión de firma del Secretario invalida automáticamente el voto.`
+          },
+          {
+            id: `b`,
+            text: `Aplicar la validación excepcional: comprobar que corresponda al tipo de elección, porte el sello del TSE, el Escudo de la República y el número correlativo de la JRV; demostrada su autenticidad, se toma como voto válido.`
+          },
+          {
+            id: `c`,
+            text: `Firmarla y sellarla en ese momento durante el escrutinio y devolverla cerrada a la urna.`
+          },
+          {
+            id: `d`,
+            text: `Clasificarla como papeleta sobrante e inutilizada para que la rasgue el Segundo Vocal.`
+          }
+        ],
+        correct: `b`,
+        analysis: `Según el protocolo de Validación Excepcional de Papeletas (Art. 186 CE e Instructivo de Escrutinio Preliminar), la omisión accidental de la firma o sello del Secretario no debe castigar al ciudadano si la papeleta es auténtica. La JRV verifica los elementos de seguridad del Art. 186 CE: tipo correcto de elección, sello del TSE, Escudo de la República en el reverso y numeración correlativa correspondiente a la mesa. Demostrada su autenticidad, se computa como voto válido; en caso contrario, se anula.`
+      },
+      {
+        id: `caso_quorum_orden`,
+        code: `Caso 5 (Quórum y Orden)`,
+        title: `Falta de integrantes a las 5:00 a.m. y alteración del orden de conteo`,
+        narrative: `A las 5:00 a.m. solo se presentan 2 integrantes propietarios en el centro de votación. Más tarde, tras cerrar la jornada a las 5:00 p.m., la mesa propone contar primero Concejos Municipales porque consideran que es más rápido antes de pasar a Presidencia.`,
+        options: [
+          {
+            id: `a`,
+            text: `Instalar la mesa con los 2 integrantes presentes y autorizar el inicio por Concejos Municipales para agilizar la transmisión.`
+          },
+          {
+            id: `b`,
+            text: `Comunicar de inmediato a la JEM o su delegado para completar el mínimo legal de 3 propietarios (Presidente, Secretario y Vocal 1, Art. 99 y 109 CE), y exigir el orden estricto de escrutinio: Presidencial → Asamblea Legislativa → Concejos Municipales (Art. 201 y 232 CE).`
+          },
+          {
+            id: `c`,
+            text: `Completar la mesa integrando a dos vigilantes partidarios como Vocales propietarios.`
+          },
+          {
+            id: `d`,
+            text: `Abrir simultáneamente los tres depósitos de votos sobre la mesa para ahorrar tiempo.`
+          }
+        ],
+        correct: `b`,
+        analysis: `Una JRV requiere un máximo de 5 propietarios y un mínimo estricto de 3 propietarios cubriendo Presidencia, Secretaría y Primera Vocalía (Art. 99 y 100 CE); los puestos faltantes se asumen de forma ascendente desde las vocalías y, si no hay al menos 3, se informa a la JEM o sus delegados para nombrar a cualquier ciudadano elegible (Art. 109 CE). Además, el Art. 201 en relación con el Art. 232 CE establece el orden obligatorio de escrutinio (Presidencial, luego Asamblea Legislativa y por último Concejos Municipales), sancionando con multa su incumplimiento.`
+      },
+      {
+        id: `caso_cierre_discapacidad`,
+        code: `Caso 6 (Cierre y Apoyo)`,
+        title: `Fila a las 5:00 p.m., votante con amputación bilateral y error en acta física`,
+        narrative: `A las 5:00 p.m. permanecen 6 personas en fila; una de ellas presenta amputación en ambos miembros superiores y no puede firmar el padrón de firma. Además, al llenar una constancia física, el Secretario comete un error de escritura y solicita reponer el formulario.`,
+        options: [
+          {
+            id: `a`,
+            text: `Cerrar la fila impidiendo votar a los 6 ciudadanos, pedir al Presidente que firme por el ciudadano y solicitar un nuevo juego de actas al COT.`
+          },
+          {
+            id: `b`,
+            text: `Enviar al Tercer Vocal al final de la fila a las 5:00 p.m. para garantizar el voto a los 6 ciudadanos ya formados; el Tercer Vocal asiste y firma por la persona con amputación bilateral; y ante errores físicos, no existe reposición de actas especiales, debiendo utilizarse una hoja en blanco / observaciones.`
+          },
+          {
+            id: `c`,
+            text: `Dejar votar a todos los que lleguen hasta las 5:30 p.m. y utilizar corrector líquido sobre el acta especial.`
+          },
+          {
+            id: `d`,
+            text: `Registrar al ciudadano con amputación en la lista de «Ciudadanos que no pudieron votar».`
+          }
+        ],
+        correct: `b`,
+        analysis: `Al anunciar el cierre a las 5:00 p.m. (Art. 198 CE), el Presidente envía al Tercer Vocal al final de la fila para resguardar el derecho de quienes ya esperaban. Asimismo, el instructivo establece que cuando un votante presenta amputación en ambos miembros superiores, el Tercer Vocal firma y asiste en el padrón de firmas. Finalmente, en el llenado físico de actas (que cuentan con ID único y papel especial) no existe reposición ante errores: se recomienda usar una página en blanco adjunta y documentar con transparencia en el acta.`
+      }
+    ];
+
+    const EXTERIOR_PHASES = [
+      {
+        step: `1`,
+        title: `Cierre de las modalidades`,
+        badge: `Plazo: 1 mes de votación`,
+        summary: `Culmina el período continuo de 1 mes habilitado para el voto en el exterior y cierran las jornadas en los 92 centros de votación ubicados en 29 países.`,
+        details: [
+          `Cobertura internacional: 92 centros de votación distribuidos en 29 países bajo la Circunscripción Especial n.º 15 (Art. 10).`,
+          `Verificación de identidad en el extranjero: al no existir un identificador único exclusivo por dirección extranjera en todos los registros, se valida mediante DUI, pasaporte, carta de embajada o actualización en línea según la modalidad aplicable.`,
+          `Las mesas y sistemas en el exterior cierran sus modalidades simultáneamente conforme al calendario de la Ley Especial para el Sufragio en el Extranjero.`
+        ]
+      },
+      {
+        step: `2`,
+        title: `Procesamiento de datos`,
+        badge: `Clasificación en 4 bloques`,
+        summary: `Los votos emitidos en el exterior se procesan y clasifican en las mismas cuatro categorías legales que en el territorio nacional.`,
+        details: [
+          `Clasificación obligatoria: Válidos, Nulos, Abstenciones e Impugnados.`,
+          `En la elección legislativa se desglosan votos válidos enteros por bandera, enteros con preferencia y votos cruzados (registrando marcas dentro del límite de escaños).`,
+          `El procesamiento informático garantiza integridad matemática antes de pasar a la distribución territorial.`
+        ]
+      },
+      {
+        step: `3`,
+        title: `Asignación territorial y departamental`,
+        badge: `Regla de domicilio`,
+        summary: `Se vincula cada voto procesado según la dirección registrada por el ciudadano salvadoreño en el exterior.`,
+        details: [
+          `Los votos de ciudadanos cuya dirección corresponde al extranjero se asignan a la circunscripción especial / centros extranjeros para la elección de sus 6 diputados.`,
+          `Los ciudadanos con domicilio registrado en territorio nacional se asignan al departamento que les corresponde según la normativa aplicable.`,
+          `De los 60 diputados totales de la Asamblea Legislativa, 54 representan a los departamentos del país y 6 son electos por los compatriotas en el extranjero.`
+        ]
+      },
+      {
+        step: `4`,
+        title: `Consolidación del escrutinio final`,
+        badge: `JEM Exterior · DL 541`,
+        summary: `La Junta Electoral Municipal del voto en el exterior (Decreto Legislativo 541) y el TSE consolidan los resultados definitivos.`,
+        details: [
+          `El Decreto Legislativo 541 establece la estructura de la JEM encargada de acompañar y consolidar el escrutinio del voto en el extranjero.`,
+          `Al Tribunal Supremo Electoral le corresponde realizar la suma definitiva de las fracciones de votos cruzados y la asignación final de escaños (Art. 200 lit. e, 214 y 217 CE).`,
+          `Los resultados del exterior se integran al escrutinio final nacional que el TSE debe iniciar a más tardar dentro de las 48 horas posteriores al cierre de la votación.`
+        ]
+      }
+    ];
+
+    const BALLOT_CASES = [
+      {
+        id: `bol_1`,
+        title: `Papeleta A · Elección Presidencial`,
+        context: `Voto emitido desde el exterior: el elector trazó una «X» clara únicamente sobre la bandera del Partido 2.`,
+        correct: `valido_bandera`,
+        explanation: `Voto válido entero por bandera (Art. 197 y 205 CE). En elección presidencial y municipal basta marcar inequívocamente la bandera o la fotografía del candidato a Presidente o Alcalde.`,
+        svgType: `pres_bandera`
+      },
+      {
+        id: `bol_2`,
+        title: `Papeleta B · Asamblea Legislativa`,
+        context: `Circunscripción de 6 escaños: el elector marcó la bandera del Partido 1 y además los rostros de los Candidatos 2 y 4 del mismo Partido 1.`,
+        correct: `valido_preferente`,
+        explanation: `Voto válido entero con preferencia (Art. 205 lit. d CE). Cuenta 1 voto entero para el Partido 1 y suma 1 marca de preferencia a cada uno de los candidatos marcados dentro de esa misma planilla.`,
+        svgType: `leg_preferente`
+      },
+      {
+        id: `bol_3`,
+        title: `Papeleta C · Asamblea Legislativa`,
+        context: `Circunscripción de 6 escaños: el elector marcó el rostro del Candidato 1 del Partido 1, el Candidato 3 del Partido 3 y una Candidatura No Partidaria (3 marcas en total, sin marcar banderas).`,
+        correct: `valido_cruzado`,
+        explanation: `Voto válido cruzado (Art. 205 lit. f CE). Al marcar candidaturas de distintos partidos o no partidarias sin exceder el máximo de escaños (3 ≤ 6) y sin marcar bandera, es válido y cada marca equivale a 1/3 de voto que sumará el TSE (Art. 214 CE).`,
+        svgType: `leg_cruzado`
+      },
+      {
+        id: `bol_4`,
+        title: `Papeleta D · Asamblea Legislativa`,
+        context: `El elector marcó la bandera del Partido 1 y también marcó el rostro de un candidato perteneciente al Partido 4.`,
+        correct: `nulo`,
+        explanation: `Voto nulo (Art. 207 lit. c CE). Es causal expresa de nulidad marcar la bandera de un partido político o coalición y además un candidato de un partido distinto (o no partidario).`,
+        svgType: `leg_nulo_bandera`
+      },
+      {
+        id: `bol_5`,
+        title: `Papeleta E · Elección Presidencial`,
+        context: `La papeleta presenta un trazo ambiguo con letras garabateadas que se salen del cuadro entre dos partidos, por lo que un vigilante reclama validez y otro invalidez al no quedar clara la intención.`,
+        correct: `impugnado`,
+        explanation: `Voto impugnado (Art. 206 CE). Se reclama su validez o invalidez cuando no se puede determinar con claridad la intención del votante. Nota clave: si tras deliberar en JRV no hay acuerdo, la mesa puede resolver clasificarlo como nulo o mantenerlo impugnado para resolución final del TSE (Art. 215 CE).`,
+        svgType: `pres_impugnado`
+      },
+      {
+        id: `bol_6`,
+        title: `Papeleta F · Voto Exterior`,
+        context: `La papeleta depositada o enviada no contiene ninguna marca, tachadura ni rasgadura en toda su superficie.`,
+        correct: `abstencion`,
+        explanation: `Abstención (Art. 200 lit. b y 207 CE). Cuando no existe ninguna marca en la papeleta (completamente en blanco), se clasifica en el bloque de abstenciones.`,
+        svgType: `voto_blanco`
+      }
+    ];
+
+    const BALLOT_CLASS_OPTIONS = [
+      { id: `valido_bandera`, label: `Válido entero (Bandera)` },
+      { id: `valido_preferente`, label: `Válido entero con preferencia` },
+      { id: `valido_cruzado`, label: `Válido cruzado` },
+      { id: `nulo`, label: `Nulo` },
+      { id: `impugnado`, label: `Impugnado` },
+      { id: `abstencion`, label: `Abstención` }
+    ];
+
+    const QUIZ_QUESTIONS = [
+      {
+        id: `q1`,
+        topic: `acta`,
+        topicLabel: `Acta y Escrutinio JRV`,
+        question: `¿Cuántas actas o documentos clave de control conforman el juego principal del paquete electoral de la JRV según el taller de actas?`,
+        options: [
+          `3 actas preliminares únicamente.`,
+          `7 documentos: Acta de recepción/devolución del paquete, Acta de instalación, Acta única del kit tecnológico, 3 Actas preliminares (Presidencial, Asamblea, Concejos) y el Recibo de acta de cierre.`,
+          `5 actas: instalación, cierre presidencial y 3 recibos de vigilantes.`
+        ],
+        correct: 1,
+        explanation: `El instructivo y las notas de capacitación detallan un total de 7 documentos: recepción/devolución de paquete, instalación, kit tecnológico (una sola acta para recibir y entregar, usada por el secretario), las 3 actas preliminares y el recibo de entrega del acta original.`
+      },
+      {
+        id: `q2`,
+        topic: `acta`,
+        topicLabel: `Acta y Escrutinio JRV`,
+        question: `¿Cuál es el orden obligatorio para realizar los escrutinios preliminares en la JRV según el Art. 201 y Art. 232 del Código Electoral?`,
+        options: [
+          `1.º Concejos Municipales, 2.º Diputados a la Asamblea Legislativa, 3.º Presidente y Vicepresidente.`,
+          `1.º Presidente y Vicepresidente, 2.º Diputados a la Asamblea Legislativa, 3.º Concejos Municipales.`,
+          `El orden lo decide el Presidente de la JRV por acuerdo con los vigilantes.`
+        ],
+        correct: 1,
+        explanation: `El Art. 201 CE establece obligatoriamente: primero Presidente y Vicepresidente, segundo Diputados a la Asamblea Legislativa y tercero Concejos Municipales. Incumplir este orden conlleva multa según el Art. 232 CE.`
+      },
+      {
+        id: `q3`,
+        topic: `acta`,
+        topicLabel: `Acta y Escrutinio JRV`,
+        question: `De acuerdo con el Art. 209 del Código Electoral y el paso 4 del SEP, ¿qué colores corresponden a las copias del Acta de Cierre para JED, FGR, JEM y Partidos/JVE?`,
+        options: [
+          `Rosado para JED, Verde para FGR, Amarillo para JEM y Gris para Partidos Políticos y JVE.`,
+          `Amarillo para JED, Rosado para FGR, Verde para JVE y Blanco para JEM.`,
+          `Verde para JED, Gris para FGR, Rosado para JEM y Amarillo para Partidos.`
+        ],
+        correct: 0,
+        explanation: `El juego de copias impresas en papel corriente se distribuye por franja de color: Rosado (JED), Verde (FGR), Amarillo (JEM) y Gris (una por cada contendiente y una para la JVE).`
+      },
+      {
+        id: `q4`,
+        topic: `acta`,
+        topicLabel: `Acta y Escrutinio JRV`,
+        question: `¿Qué integrante de la JRV cuenta las papeletas sobrantes e inutilizadas y quién las rasga hasta la mitad antes de abrir la urna?`,
+        options: [
+          `El Presidente las cuenta y el Secretario las sella sin rasgarlas.`,
+          `El Primer Vocal cuenta las sobrantes e inutilizadas y el Segundo Vocal las rasga hasta la mitad y las guarda en la bolsa correspondiente (Art. 200 lit. a CE).`,
+          `El Tercer Vocal las cuenta y las deposita dentro de la urna vacía.`
+        ],
+        correct: 1,
+        explanation: `Conforme al Paso 4 del escrutinio preliminar y el Art. 200 literal a) del Código Electoral, el Primer Vocal realiza el conteo de sobrantes e inutilizadas y el Segundo Vocal procede a inutilizarlas rasgándolas hasta la mitad.`
+      },
+      {
+        id: `q5`,
+        topic: `plazos`,
+        topicLabel: `Plazos y Organismos`,
+        question: `¿Con cuántos días de anticipación al día de la elección se nombran los miembros de la JED y los de la JEM según la normativa y apuntes de organismos electorales?`,
+        options: [
+          `JED 30 días antes y JEM 15 días antes.`,
+          `JED 120 días antes y JEM 90 días antes (o 60 días en elección exclusivamente presidencial según disposición del Código Electoral).`,
+          `Ambos organismos se nombran exactamente 180 días antes junto al cierre del registro electoral.`
+        ],
+        correct: 1,
+        explanation: `De acuerdo con el Código Electoral y las notas de capacitación, la JED se nombra 120 días antes de la elección y la JEM 90 días antes (con la salvedad de 60 días cuando se trata de elecciones presidenciales según el artículo correspondiente del CE), mientras la DOE determina la cantidad de JRV 120 días antes (Art. 107 CE).`
+      },
+      {
+        id: `q6`,
+        topic: `plazos`,
+        topicLabel: `Plazos y Organismos`,
+        question: `Si una persona nombrada en una JRV no puede desempeñar el cargo por causa justificada, ¿de qué plazo dispone para presentar su justificación y pruebas ante el TSE, y cuál es la multa si abandona sin justificación?`,
+        options: [
+          `3 días hábiles siguientes al día de la elección; la multa por negativa o abandono injustificado es de $25.00 a $114.28 USD (Art. 242 CE).`,
+          `10 días calendario posteriores; no existe multa económica.`,
+          `24 horas antes de abrir el centro de votación; multa fija de $500.00 USD.`
+        ],
+        correct: 0,
+        explanation: `El Art. 242 incisos 5 y 6 del Código Electoral concede 3 días hábiles siguientes a la fecha de la elección para presentar justificación por escrito con pruebas ante el TSE; de lo contrario, se impone multa de $25.00 a $114.28 dólares.`
+      },
+      {
+        id: `q7`,
+        topic: `plazos`,
+        topicLabel: `Plazos y Organismos`,
+        question: `¿Qué organismo permanente fiscaliza al TSE, a los OET y al RNPN sin poder intervenir en las decisiones de la mesa, y dentro de qué plazo máximo debe iniciar el TSE el escrutinio final?`,
+        options: [
+          `El COT; el escrutinio final inicia 15 días después.`,
+          `La Junta de Vigilancia Electoral (JVE, Art. 131 CE); el TSE debe iniciar el escrutinio final a más tardar dentro de las 48 horas posteriores al cierre de la votación.`,
+          `La Policía Nacional Civil; el escrutinio final inicia a la medianoche del domingo.`
+        ],
+        correct: 1,
+        explanation: `La JVE (Art. 131 CE) es el organismo permanente de los partidos políticos que fiscaliza dependencias del TSE, OET y RNPN sin tomar decisiones en mesa. Tras el cierre, el TSE está obligado a iniciar el escrutinio final a más tardar dentro de las 48 horas siguientes.`
+      },
+      {
+        id: `q8`,
+        topic: `exterior`,
+        topicLabel: `Voto en el Extranjero`,
+        question: `¿Cuál es la circunscripción especial asignada al voto en el extranjero y cuántos diputados de los 60 totales de la Asamblea Legislativa se eligen desde el exterior?`,
+        options: [
+          `Circunscripción especial 15.ª (Art. 10); 6 diputados electos en el extranjero y 54 representantes departamentales del país.`,
+          `Circunscripción 14.ª; 12 diputados del exterior y 48 nacionales.`,
+          `Circunscripción Única; los votantes en el exterior solo eligen Presidente y no diputados.`
+        ],
+        correct: 0,
+        explanation: `Las notas sobre el voto extranjero establecen que existe la circunscripción especial número 15 (Art. 10) y que la Asamblea Legislativa de 60 diputados se divide en 54 representantes del país y 6 electos por los salvadoreños en el extranjero.`
+      },
+      {
+        id: `q9`,
+        topic: `exterior`,
+        topicLabel: `Voto en el Extranjero`,
+        question: `¿Cuál es la cobertura logística internacional y el plazo de votación contemplado para el sufragio en el extranjero?`,
+        options: [
+          `14 centros de capacitación en 10 países durante 48 horas.`,
+          `92 centros de votación en 29 países, con un plazo de 1 mes de votación y una JEM creada mediante el Decreto Legislativo 541.`,
+          `84 centros de votación únicamente en Estados Unidos durante un solo domingo de 7:00 a.m. a 5:00 p.m.`
+        ],
+        correct: 1,
+        explanation: `Para el voto en el extranjero operan 92 centros de votación a nivel internacional distribuidos en 29 países, con 1 mes de votación y el acompañamiento de una JEM conforme al Decreto Legislativo 541. (Nota: los 84 centros de votación y 14 de capacitación corresponden al departamento de Ahuachapán).`
+      },
+      {
+        id: `q10`,
+        topic: `exterior`,
+        topicLabel: `Voto en el Extranjero`,
+        question: `¿Cuál es la secuencia exacta de las 4 etapas del procedimiento técnico del voto en el extranjero?`,
+        options: [
+          `1. Consolidación final → 2. Apertura de urnas → 3. Cierre de modalidades → 4. Impresión de papeletas.`,
+          `1. Cierre de las modalidades → 2. Procesamiento de datos → 3. Asignación territorial y departamental → 4. Consolidación del escrutinio final.`,
+          `1. Entrega de recibo → 2. Escaneo en COT → 3. Sorteo de JRV → 4. Puesta a cero.`
+        ],
+        correct: 1,
+        explanation: `El procedimiento técnico del voto en el extranjero recorre cuatro pasos consecutivos tras concluir el mes de votación: 1. Cierre de las modalidades, 2. Procesamiento de datos, 3. Asignación territorial y departamental (según dirección extranjera o nacional) y 4. Consolidación del escrutinio final.`
+      }
+    ];
+
+    // =========================================================================
+    // APPLICATION STATE
+    // =========================================================================
+
+    const DEFAULT_STATE = {
+      activeModule: `acta`,
+      acta: {
+        eleccion: `presidencial`,
+        ordenConfirmado: `si`,
+        recibidas: 700,
+        firmas: 482,
+        sobrantes: 218,
+        inutilizadas: 0,
+        faltantes: 0,
+        validosBandera: 456,
+        validosPref: 0,
+        validosCruzado: 0,
+        nulos: 14,
+        impugnados: 4,
+        abstenciones: 8,
+        observaciones: ``,
+        checklist: {}
+      },
+      activeCaseId: `caso_discrepancia`,
+      caseAnswers: {},
+      activeExteriorPhase: 0,
+      ballotAnswers: {},
+      quizFilter: `todos`,
+      quizAnswers: {}
+    };
+
+    let appState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+    async function persistState() {
+      try {
+        if (window.notebookAppApi && typeof window.notebookAppApi.setAppState === 'function') {
+          await window.notebookAppApi.setAppState(appState);
+        }
+      } catch (err) {
+        // Silent fallback in non-host environments
+      }
+    }
+
+    function mergeSavedState(saved) {
+      if (!saved || typeof saved !== 'object') return;
+      if (saved.activeModule) appState.activeModule = saved.activeModule;
+      if (saved.acta && typeof saved.acta === 'object') {
+        appState.acta = Object.assign({}, DEFAULT_STATE.acta, saved.acta);
+        if (!appState.acta.checklist || typeof appState.acta.checklist !== 'object') {
+          appState.acta.checklist = {};
+        }
+      }
+      if (saved.activeCaseId) appState.activeCaseId = saved.activeCaseId;
+      if (saved.caseAnswers && typeof saved.caseAnswers === 'object') appState.caseAnswers = saved.caseAnswers;
+      if (typeof saved.activeExteriorPhase === 'number') appState.activeExteriorPhase = saved.activeExteriorPhase;
+      if (saved.ballotAnswers && typeof saved.ballotAnswers === 'object') appState.ballotAnswers = saved.ballotAnswers;
+      if (saved.quizFilter) appState.quizFilter = saved.quizFilter;
+      if (saved.quizAnswers && typeof saved.quizAnswers === 'object') appState.quizAnswers = saved.quizAnswers;
+    }
+
+    // =========================================================================
+    // NAVIGATION & KPI TELEMETRY
+    // =========================================================================
+
+    function switchModule(modId) {
+      const modules = [`acta`, `casos`, `exterior`, `quiz`];
+      if (!modules.includes(modId)) return;
+      appState.activeModule = modId;
+
+      modules.forEach(function (id) {
+        const panel = document.getElementById(`panel-` + id);
+        const tab = document.getElementById(`tab-` + id);
+        const isActive = id === modId;
+        if (panel) {
+          panel.classList.toggle(`is-active`, isActive);
+        }
+        if (tab) {
+          tab.setAttribute(`aria-selected`, isActive ? `true` : `false`);
+          tab.className = isActive ? `button` : `button button--secondary`;
+        }
+      });
+
+      persistState();
+    }
+
+    function updateKpis(cuadraturaInfo) {
+      const kpiCuad = document.getElementById(`kpi-cuadratura`);
+      const kpiCuadSub = document.getElementById(`kpi-cuadratura-sub`);
+      if (kpiCuad && kpiCuadSub && cuadraturaInfo) {
+        if (cuadraturaInfo.isBalanced) {
+          kpiCuad.textContent = `Cuadrada`;
+          kpiCuad.className = `kpi-value kpi-value--positive`;
+        } else {
+          kpiCuad.textContent = `Descuadre`;
+          kpiCuad.className = `kpi-value kpi-value--error`;
+        }
+        kpiCuadSub.textContent = cuadraturaInfo.summaryText;
+      }
+
+      const solvedCases = PRACTICAL_CASES.filter(function (c) {
+        return appState.caseAnswers[c.id] === c.correct;
+      }).length;
+      const attemptedCases = Object.keys(appState.caseAnswers).length;
+      const kpiCasos = document.getElementById(`kpi-casos`);
+      const kpiCasosSub = document.getElementById(`kpi-casos-sub`);
+      if (kpiCasos) kpiCasos.textContent = solvedCases + ` / ` + PRACTICAL_CASES.length;
+      if (kpiCasosSub) kpiCasosSub.textContent = attemptedCases + ` respondidos · ` + solvedCases + ` correctos`;
+
+      const solvedBallots = BALLOT_CASES.filter(function (b) {
+        return appState.ballotAnswers[b.id] === b.correct;
+      }).length;
+      const kpiBoletas = document.getElementById(`kpi-boletas`);
+      if (kpiBoletas) kpiBoletas.textContent = solvedBallots + ` / ` + BALLOT_CASES.length;
+
+      const quizCorrect = QUIZ_QUESTIONS.filter(function (q) {
+        return appState.quizAnswers[q.id] === q.correct;
+      }).length;
+      const quizAttempted = Object.keys(appState.quizAnswers).length;
+      const kpiQuiz = document.getElementById(`kpi-quiz`);
+      const kpiQuizSub = document.getElementById(`kpi-quiz-sub`);
+      if (kpiQuiz) kpiQuiz.textContent = quizCorrect + ` / ` + QUIZ_QUESTIONS.length;
+      if (kpiQuizSub) {
+        const pct = quizAttempted > 0 ? Math.round((quizCorrect / quizAttempted) * 100) : 0;
+        kpiQuizSub.textContent = quizAttempted + ` respondidas · ` + pct + `% precisión`;
+      }
+    }
+
+    // =========================================================================
+    // MODULE 1: ACTA DE CIERRE & SEP SIMULATOR
+    // =========================================================================
+
+    function setActaFieldsToDom() {
+      const a = appState.acta;
+      const map = [
+        [`acta-eleccion`, a.eleccion],
+        [`acta-orden-confirmado`, a.ordenConfirmado],
+        [`acta-recibidas`, a.recibidas],
+        [`acta-firmas`, a.firmas],
+        [`acta-sobrantes`, a.sobrantes],
+        [`acta-inutilizadas`, a.inutilizadas],
+        [`acta-faltantes`, a.faltantes],
+        [`acta-validos-bandera`, a.validosBandera],
+        [`acta-validos-pref`, a.validosPref],
+        [`acta-validos-cruzado`, a.validosCruzado],
+        [`acta-nulos`, a.nulos],
+        [`acta-impugnados`, a.impugnados],
+        [`acta-abstenciones`, a.abstenciones],
+        [`acta-observaciones`, a.observaciones]
+      ];
+      map.forEach(function (pair) {
+        const el = document.getElementById(pair[0]);
+        if (el) el.value = pair[1];
+      });
+    }
+
+    function readNum(id) {
+      const el = document.getElementById(id);
+      if (!el) return 0;
+      const val = parseInt(el.value, 10);
+      return isNaN(val) || val < 0 ? 0 : val;
+    }
+
+    function onActaInputChange() {
+      const eleccionEl = document.getElementById(`acta-eleccion`);
+      const ordenEl = document.getElementById(`acta-orden-confirmado`);
+      const obsEl = document.getElementById(`acta-observaciones`);
+
+      appState.acta.eleccion = eleccionEl ? eleccionEl.value : `presidencial`;
+      appState.acta.ordenConfirmado = ordenEl ? ordenEl.value : `si`;
+      appState.acta.recibidas = readNum(`acta-recibidas`);
+      appState.acta.firmas = readNum(`acta-firmas`);
+      appState.acta.sobrantes = readNum(`acta-sobrantes`);
+      appState.acta.inutilizadas = readNum(`acta-inutilizadas`);
+      appState.acta.faltantes = readNum(`acta-faltantes`);
+      appState.acta.validosBandera = readNum(`acta-validos-bandera`);
+      appState.acta.validosPref = readNum(`acta-validos-pref`);
+      appState.acta.validosCruzado = readNum(`acta-validos-cruzado`);
+      appState.acta.nulos = readNum(`acta-nulos`);
+      appState.acta.impugnados = readNum(`acta-impugnados`);
+      appState.acta.abstenciones = readNum(`acta-abstenciones`);
+      appState.acta.observaciones = obsEl ? obsEl.value : ``;
+
+      if (appState.acta.eleccion !== `asamblea`) {
+        appState.acta.validosPref = 0;
+        appState.acta.validosCruzado = 0;
+        const prefEl = document.getElementById(`acta-validos-pref`);
+        const cruzEl = document.getElementById(`acta-validos-cruzado`);
+        if (prefEl) prefEl.value = 0;
+        if (cruzEl) cruzEl.value = 0;
+      }
+
+      renderActaSimulation();
+      persistState();
+    }
+
+    function loadActaPreset(presetName) {
+      if (presetName === `limpio`) {
+        appState.acta = Object.assign({}, appState.acta, {
+          eleccion: `presidencial`,
+          ordenConfirmado: `si`,
+          recibidas: 700,
+          firmas: 482,
+          sobrantes: 218,
+          inutilizadas: 0,
+          faltantes: 0,
+          validosBandera: 456,
+          validosPref: 0,
+          validosCruzado: 0,
+          nulos: 14,
+          impugnados: 4,
+          abstenciones: 8,
+          observaciones: ``
+        });
+      } else if (presetName === `discrepancia`) {
+        appState.acta = Object.assign({}, appState.acta, {
+          eleccion: `presidencial`,
+          ordenConfirmado: `si`,
+          recibidas: 700,
+          firmas: 482,
+          sobrantes: 218,
+          inutilizadas: 0,
+          faltantes: 0,
+          validosBandera: 459,
+          validosPref: 0,
+          validosCruzado: 0,
+          nulos: 14,
+          impugnados: 4,
+          abstenciones: 8,
+          observaciones: ``
+        });
+      } else if (presetName === `asamblea`) {
+        appState.acta = Object.assign({}, appState.acta, {
+          eleccion: `asamblea`,
+          ordenConfirmado: `si`,
+          recibidas: 700,
+          firmas: 495,
+          sobrantes: 204,
+          inutilizadas: 1,
+          faltantes: 0,
+          validosBandera: 210,
+          validosPref: 168,
+          validosCruzado: 84,
+          nulos: 18,
+          impugnados: 5,
+          abstenciones: 10,
+          observaciones: `Se validó 1 papeleta auténtica sin sello del Secretario tras verificar sello TSE, Escudo y correlativo (Art. 186 CE).`
+        });
+      }
+      setActaFieldsToDom();
+      renderActaSimulation();
+      persistState();
+    }
+
+    function appendObservacion(key) {
+      const obsTemplates = {
+        reconteo: `Se realizó reconteo físico completo ante discrepancia en registro auxiliar (Art. 200 CE).`,
+        art186: `Se validó papeleta auténtica sin firma/sello del Secretario tras comprobar sello TSE, Escudo y correlativo (Art. 186 CE).`,
+        negativa: `Vigilante se negó a firmar el acta; se deja constancia de las razones expuestas (Art. 200 lit. d CE).`
+      };
+      const text = obsTemplates[key] || ``;
+      if (!text) return;
+      const obsEl = document.getElementById(`acta-observaciones`);
+      if (!obsEl) return;
+      const current = obsEl.value.trim();
+      obsEl.value = current ? current + `\n` + text : text;
+      appState.acta.observaciones = obsEl.value;
+      renderActaSimulation();
+      persistState();
+    }
+
+    function toggleSepCheck(itemId) {
+      appState.acta.checklist[itemId] = !appState.acta.checklist[itemId];
+      renderSepChecklist();
+      persistState();
+    }
+
+    function renderSepChecklist() {
+      const container = document.getElementById(`sep-checklist`);
+      if (!container) return;
+      container.innerHTML = SEP_CHECKLIST_ITEMS.map(function (item) {
+        const checked = !!appState.acta.checklist[item.id];
+        return `<div class="check-item ` + (checked ? `is-done` : ``) + `">
+          <input type="checkbox" id="` + item.id + `" ` + (checked ? `checked` : ``) + ` onchange="toggleSepCheck('` + item.id + `')">
+          <label for="` + item.id + `">` + item.label + `</label>
+        </div>`;
+      }).join(``);
+    }
+
+    function renderActaChart(data) {
+      const container = document.getElementById(`acta-chart`);
+      if (!container) return;
+      const total = data.recibidas > 0 ? data.recibidas : 700;
+      const rows = [
+        { label: `Votos válidos`, val: data.validosTotal, color: `var(--data-1)` },
+        { label: `Votos nulos`, val: data.nulos, color: `var(--data-2)` },
+        { label: `Impugnados`, val: data.impugnados, color: `var(--data-4)` },
+        { label: `Abstenciones`, val: data.abstenciones, color: `var(--data-3)` },
+        { label: `Sobrantes e inutilizadas`, val: data.sobrantes + data.inutilizadas, color: `var(--data-context)` }
+      ];
+
+      const barHeight = 22;
+      const rowGap = 36;
+      const svgHeight = rows.length * rowGap + 20;
+      const labelWidth = 170;
+      const barMaxWidth = 260;
+      const svgWidth = 520;
+
+      const barsSvg = rows.map(function (row, idx) {
+        const y = idx * rowGap + 10;
+        const pct = Math.min(100, Math.round((row.val / total) * 100));
+        const w = Math.max(row.val > 0 ? 4 : 0, Math.round((row.val / total) * barMaxWidth));
+        return `<g>
+          <text x="0" y="` + (y + 15) + `" fill="var(--on-surface)" font-family="Public Sans, sans-serif" font-size="13" font-weight="700">` + row.label + `</text>
+          <rect x="` + labelWidth + `" y="` + y + `" width="` + barMaxWidth + `" height="` + barHeight + `" fill="var(--surface-container-low)"></rect>
+          <rect x="` + labelWidth + `" y="` + y + `" width="` + w + `" height="` + barHeight + `" fill="` + row.color + `"></rect>
+          <text x="` + (labelWidth + barMaxWidth + 10) + `" y="` + (y + 15) + `" fill="var(--on-surface)" font-family="Public Sans, sans-serif" font-size="13" font-weight="800">` + row.val + ` (` + pct + `%)</text>
+        </g>`;
+      }).join(``);
+
+      container.innerHTML = `<svg viewBox="0 0 ` + svgWidth + ` ` + svgHeight + `" width="100%" role="img" aria-label="Desglose de papeletas por clasificación">
+        ` + barsSvg + `
+        <line x1="` + labelWidth + `" y1="0" x2="` + labelWidth + `" y2="` + (svgHeight - 10) + `" stroke="var(--on-surface)" stroke-width="2"></line>
+      </svg>`;
+    }
+
+    function renderActaSimulation() {
+      const a = appState.acta;
+      const isAsamblea = a.eleccion === `asamblea`;
+      const prefWrap = document.getElementById(`wrap-preferencia`);
+      const cruzWrap = document.getElementById(`wrap-cruzados`);
+      if (prefWrap) prefWrap.style.display = isAsamblea ? `flex` : `none`;
+      if (cruzWrap) cruzWrap.style.display = isAsamblea ? `flex` : `none`;
+
+      const validosTotal = a.validosBandera + (isAsamblea ? a.validosPref + a.validosCruzado : 0);
+      const enUrna = validosTotal + a.nulos + a.impugnados + a.abstenciones;
+      const noVotadas = a.sobrantes + a.inutilizadas + a.faltantes;
+      const totalControl = enUrna + noVotadas;
+      const diffPadron = enUrna - a.firmas;
+      const diffPaquete = totalControl - a.recibidas;
+
+      const outValidos = document.getElementById(`out-total-validos`);
+      const outUrna = document.getElementById(`out-en-urna`);
+      const outDiffPadron = document.getElementById(`out-diff-padron`);
+      const outNoVotadas = document.getElementById(`out-no-votadas`);
+      const outBalance = document.getElementById(`out-balance-total`);
+
+      if (outValidos) outValidos.textContent = validosTotal;
+      if (outUrna) outUrna.textContent = enUrna;
+      if (outDiffPadron) outDiffPadron.textContent = (diffPadron > 0 ? `+` : ``) + diffPadron;
+      if (outNoVotadas) outNoVotadas.textContent = noVotadas;
+      if (outBalance) outBalance.textContent = totalControl + ` / ` + a.recibidas + ` (` + (diffPaquete > 0 ? `+` : ``) + diffPaquete + ` dif.)`;
+
+      const veredicto = document.getElementById(`acta-veredicto`);
+      const badge = document.getElementById(`acta-badge`);
+      const titulo = document.getElementById(`acta-veredicto-titulo`);
+      const desc = document.getElementById(`acta-veredicto-desc`);
+
+      const ordenInvalido = a.eleccion !== `presidencial` && a.ordenConfirmado === `no`;
+      const isBalanced = !ordenInvalido && diffPadron === 0 && diffPaquete === 0;
+
+      if (veredicto && badge && titulo && desc) {
+        if (ordenInvalido) {
+          veredicto.className = `inset inset--error`;
+          badge.className = `status-tag status-tag--error`;
+          badge.textContent = `Infracción de orden (Art. 201 y 232 CE)`;
+          titulo.textContent = `Detén el escrutinio: no puedes saltar el orden legal`;
+          desc.textContent = `La ley exige finalizar primero Presidencia y Vicepresidencia, luego Asamblea Legislativa y por último Concejos Municipales. Alterar el orden conlleva multa.`;
+        } else if (diffPaquete !== 0 || diffPadron !== 0) {
+          veredicto.className = `inset inset--error`;
+          badge.className = `status-tag status-tag--error`;
+          badge.textContent = `Discrepancia detectada · Detener acta`;
+          titulo.textContent = `Descuadre: Urna (${enUrna}) vs. Padrón (${a.firmas}) · Paquete (${totalControl}/${a.recibidas})`;
+          desc.textContent = `Protocolo legal (Caso 4): No impongas cifras erróneas del borrador. Detén la emisión del acta, realiza verificación física / reconteo a la vista de JRV y vigilantes, y si persiste diferencia regístrala en Observaciones.`;
+        } else {
+          veredicto.className = `inset inset--positive`;
+          badge.className = `status-tag status-tag--positive`;
+          badge.textContent = `Acta cuadrada`;
+          titulo.textContent = `Cifras consistentes para impresión y escaneo en SEP`;
+          desc.textContent = `Las ` + enUrna + ` papeletas en urna coinciden exactamente con el padrón de firmas y cierran el balance de ` + a.recibidas + ` papeletas.`;
+        }
+      }
+
+      renderActaChart({
+        recibidas: a.recibidas,
+        validosTotal: validosTotal,
+        nulos: a.nulos,
+        impugnados: a.impugnados,
+        abstenciones: a.abstenciones,
+        sobrantes: a.sobrantes,
+        inutilizadas: a.inutilizadas
+      });
+
+      renderSepChecklist();
+
+      updateKpis({
+        isBalanced: isBalanced,
+        summaryText: enUrna + ` en urna · ` + a.firmas + ` firmas · ` + totalControl + `/` + a.recibidas
+      });
+    }
+
+    // =========================================================================
+    // MODULE 2: PRACTICAL CASES
+    // =========================================================================
+
+    function selectCase(caseId) {
+      appState.activeCaseId = caseId;
+      renderCases();
+      persistState();
+    }
+
+    function answerCase(caseId, optId) {
+      appState.caseAnswers[caseId] = optId;
+      renderCases();
+      updateKpis();
+      persistState();
+    }
+
+    function renderCases() {
+      const selector = document.getElementById(`casos-selector`);
+      const activeCase = PRACTICAL_CASES.find(function (c) { return c.id === appState.activeCaseId; }) || PRACTICAL_CASES[0];
+
+      if (selector) {
+        selector.innerHTML = PRACTICAL_CASES.map(function (c) {
+          const isCurrent = c.id === activeCase.id;
+          const userAns = appState.caseAnswers[c.id];
+          const isSolved = userAns === c.correct;
+          const cls = `case-card-btn` + (isCurrent ? ` is-current` : ``) + (isSolved ? ` is-solved` : ``);
+          const status = userAns ? (isSolved ? `Correcto` : `Revisar`) : `Pendiente`;
+          return `<button type="button" class="` + cls + `" onclick="selectCase('` + c.id + `')">
+            <span class="status-tag ` + (isSolved ? `status-tag--positive` : ``) + `">` + c.code + ` · ` + status + `</span>
+            <strong>` + c.title + `</strong>
+          </button>`;
+        }).join(``);
+      }
+
+      const tagEl = document.getElementById(`caso-tag`);
+      const titleEl = document.getElementById(`caso-titulo`);
+      const relEl = document.getElementById(`caso-relato`);
+      const optsEl = document.getElementById(`caso-opciones`);
+      const fbEl = document.getElementById(`caso-feedback`);
+
+      if (tagEl) tagEl.textContent = activeCase.code;
+      if (titleEl) titleEl.textContent = activeCase.title;
+      if (relEl) relEl.textContent = activeCase.narrative;
+
+      const selectedOpt = appState.caseAnswers[activeCase.id];
+
+      if (optsEl) {
+        optsEl.innerHTML = activeCase.options.map(function (opt) {
+          let cls = `option-btn`;
+          if (selectedOpt) {
+            if (opt.id === activeCase.correct) {
+              cls += ` is-correct`;
+            } else if (opt.id === selectedOpt) {
+              cls += ` is-wrong`;
+            }
+          }
+          return `<button type="button" class="` + cls + `" onclick="answerCase('` + activeCase.id + `', '` + opt.id + `')">
+            <span class="option-letter">` + opt.id.toUpperCase() + `</span>
+            <span>` + opt.text + `</span>
+          </button>`;
+        }).join(``);
+      }
+
+      if (fbEl) {
+        if (!selectedOpt) {
+          fbEl.className = `inset`;
+          fbEl.innerHTML = `<h3>Análisis normativo y roles en mesa</h3>
+            <p class="caption">Selecciona una opción de la izquierda para verificar el fundamento legal y la actuación esperada de la JRV.</p>`;
+        } else if (selectedOpt === activeCase.correct) {
+          fbEl.className = `inset inset--positive`;
+          fbEl.innerHTML = `<span class="status-tag status-tag--positive">Decisión conforme a ley</span>
+            <h3 style="margin-top: var(--space-sm);">Fundamento Jurídico</h3>
+            <p style="margin-bottom: 0;">` + activeCase.analysis + `</p>`;
+        } else {
+          fbEl.className = `inset inset--error`;
+          fbEl.innerHTML = `<span class="status-tag status-tag--error">Actuación improcedente</span>
+            <h3 style="margin-top: var(--space-sm);">Corrección Legal</h3>
+            <p style="margin-bottom: 0;">La opción correcta es la <strong>` + activeCase.correct.toUpperCase() + `</strong>. ` + activeCase.analysis + `</p>`;
+        }
+      }
+    }
+
+    // =========================================================================
+    // MODULE 3: VOTO EN EL EXTRANJERO & BALLOT CLASSIFIER
+    // =========================================================================
+
+    function selectExteriorPhase(index) {
+      appState.activeExteriorPhase = index;
+      renderExteriorPhases();
+      persistState();
+    }
+
+    function renderExteriorPhases() {
+      const strip = document.getElementById(`exterior-phases`);
+      const detail = document.getElementById(`exterior-phase-detail`);
+      const idx = Math.max(0, Math.min(EXTERIOR_PHASES.length - 1, appState.activeExteriorPhase));
+      const activePhase = EXTERIOR_PHASES[idx];
+
+      if (strip) {
+        strip.innerHTML = EXTERIOR_PHASES.map(function (p, i) {
+          const isActive = i === idx;
+          return `<button type="button" class="phase-btn ` + (isActive ? `is-active` : ``) + `" role="tab" aria-selected="` + (isActive ? `true` : `false`) + `" onclick="selectExteriorPhase(` + i + `)">
+            <span class="step-badge">` + p.step + `</span>
+            <strong>` + p.title + `</strong>
+            <span class="caption">` + p.badge + `</span>
+          </button>`;
+        }).join(``);
+      }
+
+      if (detail && activePhase) {
+        const listHtml = activePhase.details.map(function (d) {
+          return `<li style="margin-bottom: var(--space-xs);">` + d + `</li>`;
+        }).join(``);
+        detail.innerHTML = `<span class="status-tag">Fase ` + activePhase.step + ` de 4 · ` + activePhase.badge + `</span>
+          <h3 style="margin-top: var(--space-sm);">` + activePhase.title + `</h3>
+          <p>` + activePhase.summary + `</p>
+          <ul style="margin: 0; padding-left: var(--space-lg);">` + listHtml + `</ul>`;
+      }
+    }
+
+    function buildBallotSvg(svgType) {
+      if (svgType === `pres_bandera`) {
+        return `<svg viewBox="0 0 280 120" width="100%" aria-hidden="true">
+          <rect x="4" y="4" width="272" height="112" fill="var(--background)" stroke="var(--on-surface)" stroke-width="2"></rect>
+          <text x="12" y="20" font-family="Public Sans" font-size="10" font-weight="800" fill="var(--on-surface)">PAPELETA PRESIDENCIAL</text>
+          <rect x="14" y="32" width="76" height="72" fill="var(--surface-container-low)" stroke="var(--on-surface)" stroke-width="1.5"></rect>
+          <text x="26" y="72" font-family="Public Sans" font-size="10" font-weight="700" fill="var(--on-surface)">PARTIDO 1</text>
+          <rect x="102" y="32" width="76" height="72" fill="var(--primary-container)" stroke="var(--primary)" stroke-width="2"></rect>
+          <text x="114" y="72" font-family="Public Sans" font-size="10" font-weight="700" fill="var(--on-surface)">PARTIDO 2</text>
+          <line x1="115" y1="42" x2="165" y2="94" stroke="var(--primary)" stroke-width="4"></line>
+          <line x1="165" y1="42" x2="115" y2="94" stroke="var(--primary)" stroke-width="4"></line>
+          <rect x="190" y="32" width="76" height="72" fill="var(--surface-container-low)" stroke="var(--on-surface)" stroke-width="1.5"></rect>
+          <text x="202" y="72" font-family="Public Sans" font-size="10" font-weight="700" fill="var(--on-surface)">PARTIDO 3</text>
+        </svg>`;
+      }
+      if (svgType === `leg_preferente`) {
+        return `<svg viewBox="0 0 280 120" width="100%" aria-hidden="true">
+          <rect x="4" y="4" width="272" height="112" fill="var(--background)" stroke="var(--on-surface)" stroke-width="2"></rect>
+          <text x="12" y="20" font-family="Public Sans" font-size="10" font-weight="800" fill="var(--on-surface)">DIPUTADOS · PARTIDO 1</text>
+          <rect x="14" y="28" width="60" height="80" fill="var(--primary-container)" stroke="var(--primary)" stroke-width="2"></rect>
+          <text x="20" y="46" font-family="Public Sans" font-size="9" font-weight="800" fill="var(--on-surface)">BANDERA</text>
+          <line x1="22" y1="52" x2="64" y2="98" stroke="var(--primary)" stroke-width="3.5"></line>
+          <line x1="64" y1="52" x2="22" y2="98" stroke="var(--primary)" stroke-width="3.5"></line>
+          <rect x="86" y="28" width="54" height="36" fill="var(--surface-container-low)" stroke="var(--on-surface)"></rect>
+          <text x="94" y="50" font-family="Public Sans" font-size="9" fill="var(--on-surface)">Cand. 1</text>
+          <rect x="148" y="28" width="54" height="36" fill="var(--primary-container)" stroke="var(--primary)" stroke-width="2"></rect>
+          <text x="156" y="48" font-family="Public Sans" font-size="9" font-weight="700" fill="var(--on-surface)">Cand. 2</text>
+          <line x1="154" y1="32" x2="196" y2="60" stroke="var(--primary)" stroke-width="3"></line>
+          <line x1="196" y1="32" x2="154" y2="60" stroke="var(--primary)" stroke-width="3"></line>
+          <rect x="86" y="72" width="54" height="36" fill="var(--surface-container-low)" stroke="var(--on-surface)"></rect>
+          <text x="94" y="94" font-family="Public Sans" font-size="9" fill="var(--on-surface)">Cand. 3</text>
+          <rect x="148" y="72" width="54" height="36" fill="var(--primary-container)" stroke="var(--primary)" stroke-width="2"></rect>
+          <text x="156" y="92" font-family="Public Sans" font-size="9" font-weight="700" fill="var(--on-surface)">Cand. 4</text>
+          <line x1="154" y1="76" x2="196" y2="104" stroke="var(--primary)" stroke-width="3"></line>
+          <line x1="196" y1="76" x2="154" y2="104" stroke="var(--primary)" stroke-width="3"></line>
+        </svg>`;
+      }
+      if (svgType === `leg_cruzado`) {
+        return `<svg viewBox="0 0 280 120" width="100%" aria-hidden="true">
+          <rect x="4" y="4" width="272" height="112" fill="var(--background)" stroke="var(--on-surface)" stroke-width="2"></rect>
+          <text x="12" y="20" font-family="Public Sans" font-size="10" font-weight="800" fill="var(--on-surface)">DIPUTADOS · 6 ESCAÑOS MÁX.</text>
+          <rect x="14" y="28" width="78" height="80" fill="var(--surface-container-low)" stroke="var(--on-surface)"></rect>
+          <text x="20" y="42" font-family="Public Sans" font-size="9" font-weight="700" fill="var(--on-surface)">PARTIDO 1</text>
+          <rect x="20" y="52" width="66" height="44" fill="var(--primary-container)" stroke="var(--primary)" stroke-width="2"></rect>
+          <text x="28" y="78" font-family="Public Sans" font-size="9" font-weight="700" fill="var(--on-surface)">Cand. 1</text>
+          <line x1="26" y1="56" x2="80" y2="92" stroke="var(--primary)" stroke-width="3"></line>
+          <line x1="80" y1="56" x2="26" y2="92" stroke="var(--primary)" stroke-width="3"></line>
+
+          <rect x="102" y="28" width="78" height="80" fill="var(--surface-container-low)" stroke="var(--on-surface)"></rect>
+          <text x="108" y="42" font-family="Public Sans" font-size="9" font-weight="700" fill="var(--on-surface)">PARTIDO 3</text>
+          <rect x="108" y="52" width="66" height="44" fill="var(--primary-container)" stroke="var(--primary)" stroke-width="2"></rect>
+          <text x="116" y="78" font-family="Public Sans" font-size="9" font-weight="700" fill="var(--on-surface)">Cand. 3</text>
+          <line x1="114" y1="56" x2="168" y2="92" stroke="var(--primary)" stroke-width="3"></line>
+          <line x1="168" y1="56" x2="114" y2="92" stroke="var(--primary)" stroke-width="3"></line>
+
+          <rect x="190" y="28" width="76" height="80" fill="var(--surface-container-low)" stroke="var(--on-surface)"></rect>
+          <text x="196" y="42" font-family="Public Sans" font-size="8.5" font-weight="700" fill="var(--on-surface)">NO PARTIDARIO</text>
+          <rect x="196" y="52" width="64" height="44" fill="var(--primary-container)" stroke="var(--primary)" stroke-width="2"></rect>
+          <line x1="202" y1="56" x2="254" y2="92" stroke="var(--primary)" stroke-width="3"></line>
+          <line x1="254" y1="56" x2="202" y2="92" stroke="var(--primary)" stroke-width="3"></line>
+        </svg>`;
+      }
+      if (svgType === `leg_nulo_bandera`) {
+        return `<svg viewBox="0 0 280 120" width="100%" aria-hidden="true">
+          <rect x="4" y="4" width="272" height="112" fill="var(--background)" stroke="var(--on-surface)" stroke-width="2"></rect>
+          <text x="12" y="20" font-family="Public Sans" font-size="10" font-weight="800" fill="var(--on-surface)">DIPUTADOS · MARCA MIXTA PROHIBIDA</text>
+          <rect x="14" y="30" width="118" height="78" fill="var(--error-container)" stroke="var(--error)" stroke-width="2"></rect>
+          <text x="22" y="46" font-family="Public Sans" font-size="9.5" font-weight="800" fill="var(--on-surface)">BANDERA PARTIDO 1</text>
+          <line x1="26" y1="54" x2="116" y2="100" stroke="var(--error)" stroke-width="3.5"></line>
+          <line x1="116" y1="54" x2="26" y2="100" stroke="var(--error)" stroke-width="3.5"></line>
+          <rect x="146" y="30" width="120" height="78" fill="var(--surface-container-low)" stroke="var(--on-surface)"></rect>
+          <text x="154" y="46" font-family="Public Sans" font-size="9.5" font-weight="800" fill="var(--on-surface)">CAND. DE PARTIDO 4</text>
+          <rect x="160" y="54" width="90" height="44" fill="var(--error-container)" stroke="var(--error)" stroke-width="2"></rect>
+          <line x1="166" y1="58" x2="244" y2="94" stroke="var(--error)" stroke-width="3.5"></line>
+          <line x1="244" y1="58" x2="166" y2="94" stroke="var(--error)" stroke-width="3.5"></line>
+        </svg>`;
+      }
+      if (svgType === `pres_impugnado`) {
+        return `<svg viewBox="0 0 280 120" width="100%" aria-hidden="true">
+          <rect x="4" y="4" width="272" height="112" fill="var(--background)" stroke="var(--on-surface)" stroke-width="2"></rect>
+          <text x="12" y="20" font-family="Public Sans" font-size="10" font-weight="800" fill="var(--on-surface)">PRESIDENCIAL · INTENCIÓN DUDOSA</text>
+          <rect x="14" y="32" width="114" height="72" fill="var(--surface-container-low)" stroke="var(--on-surface)"></rect>
+          <text x="26" y="72" font-family="Public Sans" font-size="10" font-weight="700" fill="var(--on-surface)">PARTIDO 1</text>
+          <rect x="150" y="32" width="114" height="72" fill="var(--surface-container-low)" stroke="var(--on-surface)"></rect>
+          <text x="162" y="72" font-family="Public Sans" font-size="10" font-weight="700" fill="var(--on-surface)">PARTIDO 2</text>
+          <path d="M 105 42 C 145 30, 130 90, 168 84 C 190 80, 118 104, 146 54" fill="none" stroke="var(--warning)" stroke-width="3.5"></path>
+        </svg>`;
+      }
+      return `<svg viewBox="0 0 280 120" width="100%" aria-hidden="true">
+        <rect x="4" y="4" width="272" height="112" fill="var(--background)" stroke="var(--on-surface)" stroke-width="2"></rect>
+        <text x="12" y="20" font-family="Public Sans" font-size="10" font-weight="800" fill="var(--on-surface)">PAPELETA SIN MARCAS</text>
+        <rect x="14" y="32" width="76" height="72" fill="var(--surface-container-low)" stroke="var(--on-surface)"></rect>
+        <text x="26" y="72" font-family="Public Sans" font-size="10" font-weight="700" fill="var(--on-surface)">PARTIDO 1</text>
+        <rect x="102" y="32" width="76" height="72" fill="var(--surface-container-low)" stroke="var(--on-surface)"></rect>
+        <text x="114" y="72" font-family="Public Sans" font-size="10" font-weight="700" fill="var(--on-surface)">PARTIDO 2</text>
+        <rect x="190" y="32" width="76" height="72" fill="var(--surface-container-low)" stroke="var(--on-surface)"></rect>
+        <text x="202" y="72" font-family="Public Sans" font-size="10" font-weight="700" fill="var(--on-surface)">PARTIDO 3</text>
+      </svg>`;
+    }
+
+    function answerBallot(ballotId, value) {
+      if (!value) {
+        delete appState.ballotAnswers[ballotId];
+      } else {
+        appState.ballotAnswers[ballotId] = value;
+      }
+      renderBallotGrid();
+      updateKpis();
+      persistState();
+    }
+
+    function renderBallotGrid() {
+      const grid = document.getElementById(`ballot-simulator-grid`);
+      if (!grid) return;
+
+      grid.innerHTML = BALLOT_CASES.map(function (b) {
+        const current = appState.ballotAnswers[b.id] || ``;
+        const isCorrect = current && current === b.correct;
+        const optionsHtml = `<option value="">-- Selecciona clasificación --</option>` +
+          BALLOT_CLASS_OPTIONS.map(function (opt) {
+            return `<option value="` + opt.id + `" ` + (current === opt.id ? `selected` : ``) + `>` + opt.label + `</option>`;
+          }).join(``);
+
+        let feedbackHtml = ``;
+        if (current) {
+          if (isCorrect) {
+            feedbackHtml = `<div class="inset inset--positive" style="padding: var(--space-sm) var(--space-md);">
+              <strong>Correcto.</strong> ` + b.explanation + `
+            </div>`;
+          } else {
+            const correctLabelObj = BALLOT_CLASS_OPTIONS.find(function (o) { return o.id === b.correct; });
+            const correctLabel = correctLabelObj ? correctLabelObj.label : b.correct;
+            feedbackHtml = `<div class="inset inset--error" style="padding: var(--space-sm) var(--space-md);">
+              <strong style="color: var(--error);">Incorrecto.</strong> Corresponde a <strong>` + correctLabel + `</strong>. ` + b.explanation + `
+            </div>`;
+          }
+        }
+
+        return `<article class="ballot-card">
+          <div>
+            <h3 style="margin-bottom: var(--space-xs);">` + b.title + `</h3>
+            <p class="caption">` + b.context + `</p>
+          </div>
+          <div class="ballot-svg-wrap">` + buildBallotSvg(b.svgType) + `</div>
+          <div class="field-group">
+            <label for="sel-` + b.id + `">Clasificación jurídica de esta papeleta</label>
+            <select id="sel-` + b.id + `" onchange="answerBallot('` + b.id + `', this.value)">` + optionsHtml + `</select>
+          </div>
+          ` + feedbackHtml + `
+        </article>`;
+      }).join(``);
+    }
+
+    // =========================================================================
+    // MODULE 4: EVALUACIÓN TEÓRICO-LEGAL
+    // =========================================================================
+
+    function setQuizFilter(topic) {
+      appState.quizFilter = topic;
+      const filters = [`todos`, `acta`, `plazos`, `exterior`];
+      filters.forEach(function (f) {
+        const btn = document.getElementById(`filter-` + f);
+        if (btn) {
+          btn.className = f === topic ? `button` : `button button--secondary`;
+        }
+      });
+      renderQuiz();
+      persistState();
+    }
+
+    function answerQuiz(qId, optIdx) {
+      appState.quizAnswers[qId] = optIdx;
+      renderQuiz();
+      updateKpis();
+      persistState();
+    }
+
+    function renderQuiz() {
+      const container = document.getElementById(`quiz-container`);
+      if (!container) return;
+
+      const filtered = QUIZ_QUESTIONS.filter(function (q) {
+        return appState.quizFilter === `todos` || q.topic === appState.quizFilter;
+      });
+
+      container.innerHTML = filtered.map(function (q, index) {
+        const selected = appState.quizAnswers[q.id];
+        const hasAnswered = typeof selected === `number`;
+        const isCorrect = hasAnswered && selected === q.correct;
+
+        const optsHtml = q.options.map(function (optText, idx) {
+          let cls = `option-btn`;
+          if (hasAnswered) {
+            if (idx === q.correct) cls += ` is-correct`;
+            else if (idx === selected) cls += ` is-wrong`;
+          }
+          const letters = [`A`, `B`, `C`];
+          return `<button type="button" class="` + cls + `" onclick="answerQuiz('` + q.id + `', ` + idx + `)">
+            <span class="option-letter">` + letters[idx] + `</span>
+            <span>` + optText + `</span>
+          </button>`;
+        }).join(``);
+
+        let fbHtml = ``;
+        if (hasAnswered) {
+          fbHtml = isCorrect
+            ? `<div class="inset inset--positive" style="margin-top: var(--space-sm);"><strong>Respuesta correcta.</strong> ` + q.explanation + `</div>`
+            : `<div class="inset inset--error" style="margin-top: var(--space-sm);"><strong style="color: var(--error);">Incorrecto.</strong> ` + q.explanation + `</div>`;
+        }
+
+        return `<article class="form-section" style="margin-bottom: 0;">
+          <div class="step-title-row">
+            <span class="step-badge">` + (index + 1) + `</span>
+            <span class="status-tag">` + q.topicLabel + `</span>
+          </div>
+          <h3>` + q.question + `</h3>
+          <div class="option-list">` + optsHtml + `</div>
+          ` + fbHtml + `
+        </article>`;
+      }).join(``);
+    }
+
+    // =========================================================================
+    // RESET (INLINE 2-STEP) & CSV EXPORT
+    // =========================================================================
+
+    function handleResetAll(btn) {
+      if (!btn) return;
+      if (btn.dataset.armed !== `true`) {
+        btn.dataset.armed = `true`;
+        btn.textContent = `Confirmar reinicio total`;
+        btn.className = `button button--danger`;
+        setTimeout(function () {
+          if (btn.dataset.armed === `true`) {
+            btn.dataset.armed = `false`;
+            btn.textContent = `Reiniciar progreso`;
+            btn.className = `button button--secondary`;
+          }
+        }, 4000);
+        return;
+      }
+
+      btn.dataset.armed = `false`;
+      btn.textContent = `Reiniciar progreso`;
+      btn.className = `button button--secondary`;
+
+      appState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+      setActaFieldsToDom();
+      renderActaSimulation();
+      renderCases();
+      renderExteriorPhases();
+      renderBallotGrid();
+      setQuizFilter(`todos`);
+      switchModule(`acta`);
+      persistState();
+    }
+
+    function exportSummaryCsv() {
+      const a = appState.acta;
+      const validos = a.validosBandera + (a.eleccion === `asamblea` ? a.validosPref + a.validosCruzado : 0);
+      const enUrna = validos + a.nulos + a.impugnados + a.abstenciones;
+      const casesOk = PRACTICAL_CASES.filter(function (c) { return appState.caseAnswers[c.id] === c.correct; }).length;
+      const ballotsOk = BALLOT_CASES.filter(function (b) { return appState.ballotAnswers[b.id] === b.correct; }).length;
+      const quizOk = QUIZ_QUESTIONS.filter(function (q) { return appState.quizAnswers[q.id] === q.correct; }).length;
+
+      const lines = [
+        `Modulo,Indicador,Valor`,
+        `Acta SEP,Eleccion,` + a.eleccion,
+        `Acta SEP,Papeletas recibidas,` + a.recibidas,
+        `Acta SEP,Firmas en padron,` + a.firmas,
+        `Acta SEP,Total en urna,` + enUrna,
+        `Acta SEP,Votos validos,` + validos,
+        `Acta SEP,Nulos,` + a.nulos,
+        `Acta SEP,Impugnados,` + a.impugnados,
+        `Acta SEP,Abstenciones,` + a.abstenciones,
+        `Acta SEP,Sobrantes,` + a.sobrantes,
+        `Casos Practicos,Aciertos,` + casesOk + `/` + PRACTICAL_CASES.length,
+        `Voto Extranjero,Papeletas clasificadas,` + ballotsOk + `/` + BALLOT_CASES.length,
+        `Cuestionario,Aciertos,` + quizOk + `/` + QUIZ_QUESTIONS.length
+      ];
+      const csvContent = lines.join(`\n`);
+
+      if (window.notebookAppApi && typeof window.notebookAppApi.triggerFileDownload === 'function') {
+        window.notebookAppApi.triggerFileDownload({
+          content: csvContent,
+          contentType: `text/csv`,
+          encoding: `UTF-8`,
+          filename: `reporte_simulador_jrv_exterior.csv`
+        });
+      }
+    }
+
+    // =========================================================================
+    // INITIALIZATION
+    // =========================================================================
+
+    async function initApp() {
+      try {
+        if (window.notebookAppApi && typeof window.notebookAppApi.getAppState === 'function') {
+          const saved = await window.notebookAppApi.getAppState();
+          if (saved) {
+            mergeSavedState(saved);
+          }
+        }
+      } catch (err) {
+        // Ignore storage read errors
+      }
+
+      setActaFieldsToDom();
+      renderActaSimulation();
+      renderCases();
+      renderExteriorPhases();
+      renderBallotGrid();
+      setQuizFilter(appState.quizFilter || `todos`);
+      switchModule(appState.activeModule || `acta`);
+
+      if (window.notebookAppApi && typeof window.notebookAppApi.notifyAppReady === 'function') {
+        window.notebookAppApi.notifyAppReady();
+      }
+    }
+
+    document.addEventListener(`DOMContentLoaded`, initApp);
+  </script>
+</body>
+</html>
